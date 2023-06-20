@@ -11,6 +11,7 @@ import tw from "@/lib/tailwind";
 import { useSupabase } from "@/context/useSupabase";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Alert } from "@/components/ui/Alert";
 
 const FormSchema = z
 	.object({
@@ -42,6 +43,7 @@ const FormSchema = z
 export default function SignUp() {
 	const { signUp } = useSupabase();
 	const router = useRouter();
+	const alertRef = React.useRef<any>(null);
 
 	const {
 		control,
@@ -55,13 +57,16 @@ export default function SignUp() {
 	async function onSubmit(data: z.infer<typeof FormSchema>) {
 		try {
 			await signUp(data.email, data.password);
-			alert("Check your email for a 6-digit OTP.");
 			router.push({
 				pathname: "/verify",
 				params: { email: data.email },
 			});
-		} catch (error) {
-			console.error(error);
+		} catch (error: Error | any) {
+			alertRef.current?.showAlert({
+				variant: "destructive",
+				title: "Error",
+				message: error.message,
+			});
 		}
 	}
 
@@ -69,6 +74,7 @@ export default function SignUp() {
 		<SafeAreaView
 			style={tw`flex-1 items-center bg-background dark:bg-dark-background p-4`}
 		>
+			<Alert ref={alertRef} />
 			<Text
 				style={tw`h1 text-foreground dark:text-dark-foreground self-start mb-5`}
 			>
@@ -78,7 +84,7 @@ export default function SignUp() {
 				<Controller
 					control={control}
 					name="email"
-					render={({ field: { onChange, onBlur, value } }) => (
+					render={({ field: { onChange, value } }) => (
 						<Input
 							label="Email"
 							placeholder="Email"
@@ -86,7 +92,6 @@ export default function SignUp() {
 							onChangeText={onChange}
 							onBlur={() => {
 								trigger("email");
-								onBlur();
 							}}
 							errors={errors.email?.message}
 							autoCapitalize="none"
@@ -99,15 +104,17 @@ export default function SignUp() {
 				<Controller
 					control={control}
 					name="password"
-					render={({ field: { onChange, onBlur, value } }) => (
+					render={({ field: { onChange, value } }) => (
 						<Input
 							label="Password"
 							placeholder="Password"
 							value={value}
 							onChangeText={onChange}
+							onFocus={() => {
+								trigger("password");
+							}}
 							onBlur={() => {
 								trigger("password");
-								onBlur();
 							}}
 							errors={errors.password?.message}
 							autoCapitalize="none"
@@ -119,7 +126,7 @@ export default function SignUp() {
 				<Controller
 					control={control}
 					name="confirmPassword"
-					render={({ field: { onChange, onBlur, value } }) => (
+					render={({ field: { onChange, value } }) => (
 						<Input
 							label="Confirm password"
 							placeholder="Confirm password"
@@ -127,7 +134,6 @@ export default function SignUp() {
 							onChangeText={onChange}
 							onBlur={() => {
 								trigger("confirmPassword");
-								onBlur();
 							}}
 							errors={errors.confirmPassword?.message}
 							autoCapitalize="none"

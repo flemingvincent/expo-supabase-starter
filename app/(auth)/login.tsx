@@ -11,6 +11,8 @@ import tw from "@/lib/tailwind";
 import { useSupabase } from "@/context/useSupabase";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Alert } from "@/components/ui/Alert";
+import { Error } from "@/types/error";
 
 const FormSchema = z.object({
 	email: z.string().email("Please enter a valid email address."),
@@ -23,6 +25,7 @@ const FormSchema = z.object({
 export default function Login() {
 	const { signInWithPassword } = useSupabase();
 	const router = useRouter();
+	const alertRef = React.useRef<any>(null);
 
 	const {
 		control,
@@ -36,8 +39,12 @@ export default function Login() {
 	async function onSubmit(data: z.infer<typeof FormSchema>) {
 		try {
 			await signInWithPassword(data.email, data.password);
-		} catch (error) {
-			console.error(error);
+		} catch (error: Error | any) {
+			alertRef.current?.showAlert({
+				variant: "destructive",
+				title: "Error",
+				message: error.message,
+			});
 		}
 	}
 
@@ -45,6 +52,7 @@ export default function Login() {
 		<SafeAreaView
 			style={tw`flex-1 items-center bg-background dark:bg-dark-background p-4`}
 		>
+			<Alert ref={alertRef} />
 			<Text
 				style={tw`h1 text-foreground dark:text-dark-foreground self-start mb-5`}
 			>

@@ -11,6 +11,7 @@ import tw from "@/lib/tailwind";
 import { useSupabase } from "@/context/useSupabase";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Alert } from "@/components/ui/Alert";
 
 const FormSchema = z.object({
 	token: z.string(),
@@ -19,6 +20,7 @@ const FormSchema = z.object({
 export default function Verify() {
 	const { verifyOtp } = useSupabase();
 	const { email } = useLocalSearchParams();
+	const alertRef = React.useRef<any>(null);
 
 	const {
 		control,
@@ -37,10 +39,19 @@ export default function Verify() {
 		}
 	}
 
+	React.useEffect(() => {
+		alertRef.current?.showAlert({
+			variant: "default",
+			title: "Verification Required",
+			message: "Check your email for a 6-digit OTP.",
+		});
+	}, []);
+
 	return (
 		<SafeAreaView
 			style={tw`flex-1 items-center bg-background dark:bg-dark-background p-4`}
 		>
+			<Alert ref={alertRef} />
 			<Text
 				style={tw`h1 text-foreground dark:text-dark-foreground self-start mb-5`}
 			>
