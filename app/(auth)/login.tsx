@@ -45,6 +45,11 @@ export default function Login() {
 		<SafeAreaView
 			style={tw`flex-1 items-center bg-background dark:bg-dark-background p-4`}
 		>
+			<Text
+				style={tw`h1 text-foreground dark:text-dark-foreground self-start mb-5`}
+			>
+				Login
+			</Text>
 			<View style={tw`w-full gap-y-4`}>
 				<Controller
 					control={control}
