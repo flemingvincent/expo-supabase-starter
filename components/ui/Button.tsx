@@ -46,7 +46,7 @@ export const Button = ({
 			{...props}
 		>
 			{isLoading ? (
-				<ActivityIndicator size={"small"} />
+				<ActivityIndicator size="small" />
 			) : (
 				<Text
 					style={[
