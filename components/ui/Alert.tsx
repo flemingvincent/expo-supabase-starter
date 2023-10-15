@@ -1,6 +1,5 @@
-import React, { useCallback } from "react";
+import { useCallback, forwardRef, useState, useImperativeHandle } from "react";
 import { Text } from "react-native";
-
 import { PanGestureHandler } from "react-native-gesture-handler";
 import Animated, {
 	useSharedValue,
@@ -24,13 +23,14 @@ export interface IAlertProps {
 	duration?: number;
 }
 
-export const Alert = React.forwardRef(({}, ref) => {
+// eslint-disable-next-line no-empty-pattern
+export const Alert = forwardRef(({}, ref) => {
 	const translateY = useSharedValue<number>(-100);
-	const [isShown, setIsShown] = React.useState<boolean>(false);
-	const [variant, setVariant] = React.useState<AlertVariants>("default");
-	const [title, setTitle] = React.useState<string>("");
-	const [message, setMessage] = React.useState<string>("");
-	const [duration, setDuration] = React.useState<number>(3000);
+	const [isShown, setIsShown] = useState<boolean>(false);
+	const [variant, setVariant] = useState<AlertVariants>("default");
+	const [title, setTitle] = useState<string>("");
+	const [message, setMessage] = useState<string>("");
+	const [duration, setDuration] = useState<number>(3000);
 
 	const showAlert = useCallback(
 		({ variant, title, message, duration }: IAlertProps) => {
@@ -54,7 +54,7 @@ export const Alert = React.forwardRef(({}, ref) => {
 		[translateY],
 	);
 
-	React.useImperativeHandle(
+	useImperativeHandle(
 		ref,
 		() => ({
 			showAlert,

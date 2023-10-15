@@ -1,6 +1,5 @@
 import * as React from "react";
 import { TextInput, Text, View } from "react-native";
-
 import { useAppColorScheme } from "twrnc";
 
 import tw from "@/lib/tailwind";

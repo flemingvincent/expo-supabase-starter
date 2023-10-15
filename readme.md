@@ -62,11 +62,7 @@ yarn install
 
 - If you haven't already, create an new account on [Supabase](https://supabase.io/).
 - Create a new project and obtain your Supabase URL and API key.
-- Enable Email Provider and Confirm Email in the Authentication > Configuration > Providers section..
-- Customize the confirm sign up email template in Authentication > Configuration > Email Templates to include a 6-digit OTP:
-  - Subject heading: Confirm Your Sign Up
-  - Message Body: `<p>Your 6 digit code is {{ .Token}}</p>`
-- Update the `supabaseUrl` and `supabaseKey` variables in the `./context/supabase.ts` file with your Supabase URL and API key respectively.
+- Update the `supabaseUrl` and `supabaseKey` variables in the `.env` file with your Supabase URL and API key respectively.
 
 5. Start the Expo development server:
 
@@ -77,8 +73,11 @@ yarn start
 ### Project Structure
 
 - **./app**: This directory serves as the router in your mobile navigation. It contains all the screens and layouts for your application.
+- **./assets** This directory contains all the static assets in your application, including images, fonts, and icons.
 - **./components** This directory encompasses all the reusable components in your application, including primatives located in the `./components/ui` directory.
-- **./context** This directory contains the Supabase provider and hooks used within the application.
+- **./config** This directory contains all the configuration files for your application, including the Supabase configuration file.
+- **./context** This directory contains the Supabase provider used within the application.
+- **./hooks** This directory contains all the Supbase hooks used within the application.
 - **./lib** This directory includes the `tailwind.js` file, which is responsible for creating a custom configured version of the tw function object.
 
 Feel free to modify the project structure according to your specific requirements.

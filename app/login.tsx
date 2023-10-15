@@ -1,18 +1,16 @@
-import React from "react";
-import { Text, View } from "react-native";
-
-import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller } from "react-hook-form";
 import { useRouter } from "expo-router";
+import { useRef } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as z from "zod";
 
-import tw from "@/lib/tailwind";
-import { useSupabase } from "@/context/useSupabase";
+import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Alert } from "@/components/ui/Alert";
-import { Error } from "@/types/error";
+import { useSupabase } from "@/hooks/useSupabase";
+import tw from "@/lib/tailwind";
 
 const FormSchema = z.object({
 	email: z.string().email("Please enter a valid email address."),
@@ -25,7 +23,7 @@ const FormSchema = z.object({
 export default function Login() {
 	const { signInWithPassword } = useSupabase();
 	const router = useRouter();
-	const alertRef = React.useRef<any>(null);
+	const alertRef = useRef<any>(null);
 
 	const {
 		control,

@@ -28,6 +28,9 @@
 		"web": {
 			"favicon": "./assets/favicon.png",
 			"bundler": "metro"
+		},
+		"experiments": {
+			"tsconfigPaths": true
 		}
 	}
 }
