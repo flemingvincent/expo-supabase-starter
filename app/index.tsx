@@ -1,14 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
-import { useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as z from "zod";
 
-import { Alert } from "@/components/ui/Alert";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+import { Button, FormLabel, FormMessage, Input } from "@/components/ui";
 import { useSupabase } from "@/hooks/useSupabase";
 import tw from "@/lib/tailwind";
 
@@ -42,7 +39,6 @@ const FormSchema = z
 export default function SignUp() {
 	const { signUp } = useSupabase();
 	const router = useRouter();
-	const alertRef = useRef<any>(null);
 
 	const {
 		control,
@@ -57,11 +53,7 @@ export default function SignUp() {
 		try {
 			await signUp(data.email, data.password);
 		} catch (error: Error | any) {
-			alertRef.current?.showAlert({
-				variant: "destructive",
-				title: "Error",
-				message: error.message,
-			});
+			console.log(error.message);
 		}
 	}
 
@@ -69,72 +61,81 @@ export default function SignUp() {
 		<SafeAreaView
 			style={tw`flex-1 items-center bg-background dark:bg-dark-background p-4`}
 		>
-			<Alert ref={alertRef} />
-			<Text
-				style={tw`h1 text-foreground dark:text-dark-foreground self-start mb-5`}
-			>
-				Welcome
-			</Text>
-			<View style={tw`w-full gap-y-4`}>
+			<Text style={tw`h1 self-start mb-5`}>Welcome</Text>
+			<View style={tw`w-full gap-4`}>
 				<Controller
 					control={control}
 					name="email"
 					render={({ field: { onChange, value } }) => (
-						<Input
-							label="Email"
-							placeholder="Email"
-							value={value}
-							onChangeText={onChange}
-							onBlur={() => {
-								trigger("email");
-							}}
-							errors={errors.email?.message}
-							autoCapitalize="none"
-							autoComplete="email"
-							autoCorrect={false}
-							keyboardType="email-address"
-						/>
+						<View style={tw`gap-1.5`}>
+							<FormLabel errors={errors.email}>Email</FormLabel>
+							<Input
+								placeholder="Email"
+								value={value}
+								onChangeText={onChange}
+								onBlur={() => {
+									trigger("email");
+								}}
+								error={errors.email}
+								autoCapitalize="none"
+								autoComplete="email"
+								autoCorrect={false}
+								keyboardType="email-address"
+							/>
+							{errors.email && (
+								<FormMessage>{errors.email?.message}</FormMessage>
+							)}
+						</View>
 					)}
 				/>
 				<Controller
 					control={control}
 					name="password"
 					render={({ field: { onChange, value } }) => (
-						<Input
-							label="Password"
-							placeholder="Password"
-							value={value}
-							onChangeText={onChange}
-							onFocus={() => {
-								trigger("password");
-							}}
-							onBlur={() => {
-								trigger("password");
-							}}
-							errors={errors.password?.message}
-							autoCapitalize="none"
-							autoCorrect={false}
-							secureTextEntry
-						/>
+						<View style={tw`gap-1.5`}>
+							<FormLabel errors={errors.password}>Password</FormLabel>
+							<Input
+								placeholder="Password"
+								value={value}
+								onChangeText={onChange}
+								onBlur={() => {
+									trigger("password");
+								}}
+								error={errors.password}
+								autoCapitalize="none"
+								autoCorrect={false}
+								secureTextEntry
+							/>
+							{errors.password && (
+								<FormMessage>{errors.password?.message}</FormMessage>
+							)}
+						</View>
 					)}
 				/>
 				<Controller
 					control={control}
 					name="confirmPassword"
 					render={({ field: { onChange, value } }) => (
-						<Input
-							label="Confirm password"
-							placeholder="Confirm password"
-							value={value}
-							onChangeText={onChange}
-							onBlur={() => {
-								trigger("confirmPassword");
-							}}
-							errors={errors.confirmPassword?.message}
-							autoCapitalize="none"
-							autoCorrect={false}
-							secureTextEntry
-						/>
+						<View style={tw`gap-1.5`}>
+							<FormLabel errors={errors.confirmPassword}>
+								Confirm Password
+							</FormLabel>
+							<Input
+								placeholder="Confirm password"
+								value={value}
+								onChangeText={onChange}
+								onBlur={() => {
+									trigger("confirmPassword");
+								}}
+								error={errors.confirmPassword}
+								autoCapitalize="none"
+								autoCorrect={false}
+								secureTextEntry
+							/>
+							{errors.confirmPassword && (
+								<FormMessage>{errors.confirmPassword?.message}</FormMessage>
+							)}
+						</View>
 					)}
 				/>
 			</View>
