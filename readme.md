@@ -25,3 +25,5 @@ Contributions to this starter template are highly encouraged and welcome! If you
 ## License
 
 This repository is licensed under the MIT License. You are granted the freedom to use, modify, and distribute the code for personal or commercial purposes. For more details, please refer to the [LICENSE](https://github.com/FlemingVincent/supabase-starter/blob/main/LICENSE) file.
+
+https://github.com/FlemingVincent/expo-supabase-starter/assets/80268905/bd57bd25-c899-4867-8061-ad691820ee4e
