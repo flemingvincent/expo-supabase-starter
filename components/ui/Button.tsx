@@ -17,6 +17,7 @@ export interface IButtonProps
 	size?: "default" | "sm" | "lg";
 	label?: string;
 	isLoading?: boolean;
+	style?: TouchableOpacity["props"]["style"];
 }
 
 export const Button = ({
@@ -25,6 +26,7 @@ export const Button = ({
 	size = "default",
 	label = "Button",
 	isLoading = false,
+	style,
 	...props
 }: IButtonProps) => {
 	return (
@@ -35,10 +37,12 @@ export const Button = ({
 				variant === "secondary" && tw`bg-secondary dark:bg-dark-secondary`,
 				variant === "destructive" &&
 					tw`bg-destructive dark:bg-dark-destructive`,
-				variant === "outline" && tw`border border-input`,
+				variant === "outline" &&
+					tw`border border-input bg-background dark:bg-dark-background`,
 				size === "default" && tw`h-10 px-4 py-2`,
 				size === "sm" && tw`h-9 px-3 rounded-md`,
 				size === "lg" && tw`h-11 px-8 rounded-md`,
+				style,
 			]}
 			{...props}
 		>

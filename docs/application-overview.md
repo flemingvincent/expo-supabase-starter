@@ -1,6 +1,6 @@
 # 💻 Application Overview
 
-The application is pretty simple. Users can sign up, login, and sign out.
+The application is pretty simple. Users can sign up, sign in, and sign out.
 
 ## Get Started
 
