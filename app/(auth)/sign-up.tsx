@@ -144,7 +144,7 @@ export default function SignUp() {
 			</View>
 			<View style={tw`gap-y-4`}>
 				<Button
-					label="Sign Up"
+					label="Sign up"
 					onPress={handleSubmit(onSubmit)}
 					isLoading={isSubmitting}
 				/>
