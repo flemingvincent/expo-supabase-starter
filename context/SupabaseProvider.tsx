@@ -1,4 +1,5 @@
 import { Session, User } from "@supabase/supabase-js";
+import { useRouter, useSegments } from "expo-router";
 import { createContext, useEffect, useState } from "react";
 
 import { supabase } from "@/config/supabase";
@@ -29,6 +30,9 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 	const [user, setUser] = useState<User | null>(null);
 	const [session, setSession] = useState<Session | null>(null);
 	const [initialized, setInitialized] = useState<boolean>(false);
+
+	const segments = useSegments()[0];
+	const router = useRouter();
 
 	const signUp = async (email: string, password: string) => {
 		const { error } = await supabase.auth.signUp({
@@ -68,6 +72,16 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 			data.subscription.unsubscribe();
 		};
 	}, []);
+
+	useEffect(() => {
+		if (!initialized) return;
+
+		if (!session && segments !== "(auth)") {
+			router.replace("/(auth)");
+		} else if (session && segments !== "(app)") {
+			router.replace("/");
+		}
+	}, [initialized, session, segments]);
 
 	return (
 		<SupabaseContext.Provider
