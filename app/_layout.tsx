@@ -1,6 +1,5 @@
 import { Stack, SplashScreen } from "expo-router";
 import { useEffect } from "react";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useDeviceContext } from "twrnc";
 
@@ -34,18 +33,16 @@ function RootLayoutNav() {
 
 	return (
 		<SupabaseProvider>
-			<GestureHandlerRootView style={tw`flex-1`}>
-				<SafeAreaProvider>
-					<Stack
-						screenOptions={{
-							headerShown: false,
-						}}
-					>
-						<Stack.Screen name="(auth)" />
-						<Stack.Screen name="(app)" />
-					</Stack>
-				</SafeAreaProvider>
-			</GestureHandlerRootView>
+			<SafeAreaProvider>
+				<Stack
+					screenOptions={{
+						headerShown: false,
+					}}
+				>
+					<Stack.Screen name="(auth)" />
+					<Stack.Screen name="(app)" />
+				</Stack>
+			</SafeAreaProvider>
 		</SupabaseProvider>
 	);
 }

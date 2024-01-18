@@ -41,8 +41,8 @@ export default function SignIn() {
 	return (
 		<SafeAreaView style={tw`flex-1 bg-background dark:bg-dark-background p-4`}>
 			<View style={tw`flex-1`}>
-				<Text style={tw`h2 self-start`}>Sign in</Text>
-				<Text style={tw`p self-start muted mb-5`}>
+				<Text style={tw`h1 self-start`}>Sign in</Text>
+				<Text style={tw`muted self-start mb-5`}>
 					to continue to Expo Supabase Starter
 				</Text>
 				<View style={tw`gap-y-4`}>

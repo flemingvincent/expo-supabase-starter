@@ -30,7 +30,7 @@ export default function WelcomeScreen() {
 				/>
 				<Button
 					style={tw`flex-1`}
-					variant="outline"
+					variant="secondary"
 					label="Sign in"
 					onPress={() => {
 						router.push("/sign-in");
