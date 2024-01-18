@@ -1,8 +1,8 @@
 {
 	"expo": {
-		"name": "SupabaseStarter",
-		"slug": "SupabaseStarter",
-		"scheme": "supabase-starter",
+		"name": "ExpoSupabaseStarter",
+		"slug": "ExpoSupabaseStarter",
+		"scheme": "expo-supabase-starter",
 		"version": "1.0.0",
 		"orientation": "portrait",
 		"icon": "./assets/icon.png",
@@ -25,12 +25,7 @@
 				"backgroundColor": "#ffffff"
 			}
 		},
-		"web": {
-			"favicon": "./assets/favicon.png",
-			"bundler": "metro"
-		},
 		"experiments": {
-			"tsconfigPaths": true,
 			"typedRoutes": true
 		},
 		"plugins": ["expo-router"]

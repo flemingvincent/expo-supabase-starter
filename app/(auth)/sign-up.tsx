@@ -60,8 +60,8 @@ export default function SignUp() {
 	return (
 		<SafeAreaView style={tw`flex-1 bg-background dark:bg-dark-background p-4`}>
 			<View style={tw`flex-1`}>
-				<Text style={tw`h2 self-start`}>Create your account</Text>
-				<Text style={tw`p self-start muted mb-5`}>
+				<Text style={tw`h1 self-start`}>Sign Up</Text>
+				<Text style={tw`muted self-start mb-5`}>
 					to continue to Expo Supabase Starter
 				</Text>
 				<View style={tw`gap-4`}>

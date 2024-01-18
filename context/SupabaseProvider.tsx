@@ -62,7 +62,6 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 	};
 
 	useEffect(() => {
-		// Listen for changes to authentication state
 		const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
 			setSession(session);
 			setUser(session ? session.user : null);
