@@ -28,4 +28,6 @@ This repository is licensed under the MIT License. You are granted the freedom t
 
 ## Demo
 
-https://github.com/FlemingVincent/expo-supabase-starter/assets/80268905/9e25f320-df0d-406b-946e-b5ed33b0baf9
+https://github.com/FlemingVincent/expo-supabase-starter/assets/80268905/01cd46a7-4d3e-40b1-bae4-ad3b5b5b7212
+
+https://github.com/FlemingVincent/expo-supabase-starter/assets/80268905/9ca0f3a7-2bc3-48d2-bebc-0b23d01b1802
