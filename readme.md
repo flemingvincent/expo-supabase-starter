@@ -4,7 +4,7 @@
 
 ## Introduction
 
-This repository serves as a comprehensive starter project for developing Expo applications with Supabase as the backend. It integrates various technologies such as Expo Router for navigation, Tailwind for styling, React-Hook-Form for form handling, Zod for schema validation, and TypeScript for type safety. By leveraging these powerful tools, this starter template provides a robust foundation for building modern, scalable, and efficient mobile applications.
+This repository serves as a comprehensive starter project for developing Expo applications with Supabase as the backend. It integrates various technologies such as Expo Router for navigation, Tailwind CSS for styling, React-Hook-Form for form handling, Zod for schema validation, and TypeScript for type safety. By leveraging these powerful tools, this starter template provides a robust foundation for building modern, scalable, and efficient mobile applications.
 
 #### Disclaimer
 
@@ -27,3 +27,5 @@ Contributions to this starter project are highly encouraged and welcome! If you 
 This repository is licensed under the MIT License. You are granted the freedom to use, modify, and distribute the code for personal or commercial purposes. For more details, please refer to the [LICENSE](https://github.com/FlemingVincent/supabase-starter/blob/main/LICENSE) file.
 
 ## Demo
+
+https://github.com/FlemingVincent/expo-supabase-starter/assets/80268905/884ed027-4e4c-4fac-abc2-1f4a5df958f2
