@@ -1,10 +1,9 @@
+import "../global.css";
 import { Stack, SplashScreen } from "expo-router";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useDeviceContext } from "twrnc";
 
 import { SupabaseProvider } from "@/context/SupabaseProvider";
-import tw from "@/lib/tailwind";
 
 export {
 	// Catch any errors thrown by the Layout component.
@@ -29,8 +28,6 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-	useDeviceContext(tw);
-
 	return (
 		<SupabaseProvider>
 			<SafeAreaProvider>
