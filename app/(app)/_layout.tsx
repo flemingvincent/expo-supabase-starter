@@ -1,11 +1,9 @@
 import { Tabs } from "expo-router";
+import { useColorScheme } from "nativewind";
 import React from "react";
-import { useAppColorScheme } from "twrnc";
-
-import tw from "@/lib/tailwind";
 
 export default function AppLayout() {
-	const [colorScheme] = useAppColorScheme(tw);
+	const { colorScheme } = useColorScheme();
 
 	return (
 		<Tabs
@@ -13,9 +11,7 @@ export default function AppLayout() {
 				headerShown: false,
 				tabBarStyle: {
 					backgroundColor:
-						colorScheme === "dark"
-							? tw.color("dark-background")
-							: tw.color("background"),
+						colorScheme === "dark" ? "hsl(240, 10%, 3.9%)" : "hsl(0, 0%, 100%)",
 				},
 				tabBarShowLabel: false,
 			}}
