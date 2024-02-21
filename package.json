@@ -13,7 +13,7 @@
 		"@supabase/supabase-js": "^2.38.0",
 		"class-variance-authority": "^0.7.0",
 		"clsx": "^2.1.0",
-		"expo": "^50.0.2",
+		"expo": "~50.0.7",
 		"expo-constants": "~15.4.5",
 		"expo-linking": "~6.2.2",
 		"expo-router": "~3.4.3",
