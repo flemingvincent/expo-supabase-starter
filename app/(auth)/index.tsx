@@ -23,8 +23,8 @@ export default function WelcomeScreen() {
 					Welcome to Expo Supabase Starter
 				</Text>
 				<Text className="text-sm text-muted-foreground text-center">
-					A simple template for developing Expo applications with Supabase as
-					the backend.
+					A comprehensive starter project for developing Expo applications with
+					Supabase as the backend.
 				</Text>
 			</View>
 			<View className="flex flex-row gap-x-4">
