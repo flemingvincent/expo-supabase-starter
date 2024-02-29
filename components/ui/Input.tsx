@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { TextInput } from "react-native";
 
 import { cn } from "@/lib/utils";
@@ -11,7 +11,8 @@ const Input = React.forwardRef<
 		<TextInput
 			ref={ref}
 			className={cn(
-				"flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground leading-[0px]",
+				"h-10 native:h-12 rounded-md border border-input bg-background px-3 text-base lg:text-sm native:text-lg native:leading-[1.25] text-foreground placeholder:text-muted-foreground file:border-0 file:bg-transparent file:font-medium",
+				props.editable === false && "opacity-50",
 				className,
 			)}
 			placeholderClassName={cn("text-muted-foreground", placeholderClassName)}

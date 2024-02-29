@@ -15,7 +15,5 @@ root
 |
 +-- context           # This directory contains all the providers used within the application.
 |
-+-- hooks             # This directory contains all the hooks used within the application.
-|
 +-- lib               # This directory contains different libraries preconfigured for the application.
 ```

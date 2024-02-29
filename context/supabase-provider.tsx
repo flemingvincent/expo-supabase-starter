@@ -1,6 +1,6 @@
 import { Session, User } from "@supabase/supabase-js";
-import { useRouter, useSegments } from "expo-router";
-import { createContext, useEffect, useState } from "react";
+import { useRouter } from "expo-router";
+import { createContext, useContext, useEffect, useState } from "react";
 
 import { supabase } from "@/config/supabase";
 
@@ -26,13 +26,13 @@ export const SupabaseContext = createContext<SupabaseContextProps>({
 	signOut: async () => {},
 });
 
+export const useSupabase = () => useContext(SupabaseContext);
+
 export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
+	const router = useRouter();
 	const [user, setUser] = useState<User | null>(null);
 	const [session, setSession] = useState<Session | null>(null);
 	const [initialized, setInitialized] = useState<boolean>(false);
-
-	const segments = useSegments()[0];
-	const router = useRouter();
 
 	const signUp = async (email: string, password: string) => {
 		const { error } = await supabase.auth.signUp({
@@ -41,6 +41,8 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 		});
 		if (error) {
 			throw error;
+		} else {
+			router.replace("/");
 		}
 	};
 
@@ -51,6 +53,8 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 		});
 		if (error) {
 			throw error;
+		} else {
+			router.replace("/");
 		}
 	};
 
@@ -71,16 +75,6 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 			data.subscription.unsubscribe();
 		};
 	}, []);
-
-	useEffect(() => {
-		if (!initialized) return;
-
-		if (!session && segments !== "(auth)") {
-			router.replace("/(auth)");
-		} else if (session && segments !== "(app)") {
-			router.replace("/");
-		}
-	}, [initialized, session, segments]);
 
 	return (
 		<SupabaseContext.Provider

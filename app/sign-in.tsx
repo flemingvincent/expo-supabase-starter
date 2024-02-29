@@ -1,12 +1,20 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
 import { useForm } from "react-hook-form";
-import { ActivityIndicator, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ActivityIndicator, View } from "react-native";
 import * as z from "zod";
 
-import { Button, Form, FormField, FormInput } from "@/components/ui";
-import { useSupabase } from "@/hooks/useSupabase";
+import { SafeAreaView } from "@/components/safe-area-view";
+import {
+	Button,
+	Form,
+	FormField,
+	FormInput,
+	H1,
+	Muted,
+	P,
+} from "@/components/ui";
+import { useSupabase } from "@/context/supabase-provider";
 
 const formSchema = z.object({
 	email: z.string().email("Please enter a valid email address."),
@@ -19,7 +27,6 @@ const formSchema = z.object({
 export default function SignIn() {
 	const { signInWithPassword } = useSupabase();
 	const router = useRouter();
-	const insets = useSafeAreaInsets();
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -40,21 +47,12 @@ export default function SignIn() {
 	}
 
 	return (
-		<View
-			className="flex-1 bg-background p-4"
-			// HACK: This is a workaround for the SafeAreaView className prop not working
-			style={{
-				paddingTop: insets.top,
-				paddingBottom: insets.bottom,
-			}}
-		>
+		<SafeAreaView className="flex-1 bg-background p-4">
 			<View className="flex-1">
-				<Text className="text-4xl text-foreground font-extrabold tracking-tight lg:text-5xl self-start">
-					Sign In
-				</Text>
-				<Text className="text-sm text-muted-foreground self-start mb-5">
+				<H1 className="self-start">Sign In</H1>
+				<Muted className="self-start mb-5">
 					to continue to Expo Supabase Starter
-				</Text>
+				</Muted>
 				<Form {...form}>
 					<View className="gap-4">
 						<FormField
@@ -98,19 +96,19 @@ export default function SignIn() {
 					{form.formState.isSubmitting ? (
 						<ActivityIndicator size="small" />
 					) : (
-						"Sign in"
+						<P>Sign In</P>
 					)}
 				</Button>
-				<Text
-					className="text-sm text-muted-foreground text-center"
+				<Muted
+					className="text-center"
 					onPress={() => {
 						router.replace("/sign-up");
 					}}
 				>
 					Don't have an account?{" "}
-					<Text className="leading-7 text-foreground">Sign up</Text>
-				</Text>
+					<Muted className="text-foreground">Sign up</Muted>
+				</Muted>
 			</View>
-		</View>
+		</SafeAreaView>
 	);
 }
