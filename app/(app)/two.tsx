@@ -1,19 +1,17 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
 
-import { Button } from "@/components/ui";
-import { useSupabase } from "@/hooks/useSupabase";
+import { Button, H1, Muted, P } from "@/components/ui";
+import { useSupabase } from "@/context/supabase-provider";
 
 export default function TabTwoScreen() {
 	const { signOut } = useSupabase();
 
 	return (
 		<View className="flex-1 items-center justify-center bg-background p-4 gap-y-4">
-			<Text className="text-4xl text-foreground font-extrabold tracking-tight lg:text-5xl">
-				Sign Out
-			</Text>
-			<Text className="text-sm text-muted-foreground text-center">
+			<H1 className="text-center">Sign Out</H1>
+			<Muted className="text-center">
 				Sign out and return to the welcome screen.
-			</Text>
+			</Muted>
 			<Button
 				className="w-full"
 				size="default"
@@ -22,7 +20,7 @@ export default function TabTwoScreen() {
 					signOut();
 				}}
 			>
-				Sign out
+				<P>Sign out</P>
 			</Button>
 		</View>
 	);

@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import {
 	Controller,
 	ControllerProps,
@@ -8,10 +8,12 @@ import {
 	Noop,
 	useFormContext,
 } from "react-hook-form";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import Animated, { FadeInDown, FadeOut } from "react-native-reanimated";
 
-import { Input } from "./Input";
-import { Label } from "./Label";
+import { Input } from "./input";
+import { Label } from "./label";
+import { Text } from "./typography";
 
 import { cn } from "@/lib/utils";
 
@@ -89,14 +91,20 @@ FormItem.displayName = "FormItem";
 
 const FormLabel = React.forwardRef<
 	React.ElementRef<typeof Label>,
-	React.ComponentPropsWithoutRef<typeof Label>
->(({ className, ...props }, ref) => {
+	Omit<React.ComponentPropsWithoutRef<typeof Label>, "children"> & {
+		children: string;
+	}
+>(({ className, nativeID: _nativeID, ...props }, ref) => {
 	const { error, formItemNativeID } = useFormField();
 
 	return (
 		<Label
 			ref={ref}
-			className={cn("pb-1.5", error && "text-destructive", className)}
+			className={cn(
+				"pb-1 native:pb-2 px-px",
+				error && "text-destructive",
+				className,
+			)}
 			nativeID={formItemNativeID}
 			{...props}
 		/>
@@ -114,7 +122,7 @@ const FormDescription = React.forwardRef<
 		<Text
 			ref={ref}
 			nativeID={formDescriptionNativeID}
-			className={cn("text-sm text-muted-foreground pt-1.5", className)}
+			className={cn("text-sm text-muted-foreground pt-1", className)}
 			{...props}
 		/>
 	);
@@ -122,8 +130,8 @@ const FormDescription = React.forwardRef<
 FormDescription.displayName = "FormDescription";
 
 const FormMessage = React.forwardRef<
-	React.ElementRef<typeof Text>,
-	React.ComponentPropsWithoutRef<typeof Text>
+	React.ElementRef<typeof Animated.Text>,
+	React.ComponentPropsWithoutRef<typeof Animated.Text>
 >(({ className, children, ...props }, ref) => {
 	const { error, formMessageNativeID } = useFormField();
 	const body = error ? String(error?.message) : children;
@@ -133,14 +141,16 @@ const FormMessage = React.forwardRef<
 	}
 
 	return (
-		<Text
+		<Animated.Text
+			entering={FadeInDown}
+			exiting={FadeOut.duration(275)}
 			ref={ref}
 			nativeID={formMessageNativeID}
-			className={cn("text-sm font-medium text-destructive pt-1.5", className)}
+			className={cn("text-sm font-medium text-destructive", className)}
 			{...props}
 		>
 			{body}
-		</Text>
+		</Animated.Text>
 	);
 });
 FormMessage.displayName = "FormMessage";
