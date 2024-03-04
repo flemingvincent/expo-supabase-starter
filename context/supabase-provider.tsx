@@ -1,8 +1,10 @@
 import { Session, User } from "@supabase/supabase-js";
-import { useRouter } from "expo-router";
+import { useRouter, useSegments, SplashScreen } from "expo-router";
 import { createContext, useContext, useEffect, useState } from "react";
 
 import { supabase } from "@/config/supabase";
+
+SplashScreen.preventAutoHideAsync();
 
 type SupabaseContextProps = {
 	user: User | null;
@@ -30,6 +32,7 @@ export const useSupabase = () => useContext(SupabaseContext);
 
 export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 	const router = useRouter();
+	const segments = useSegments();
 	const [user, setUser] = useState<User | null>(null);
 	const [session, setSession] = useState<Session | null>(null);
 	const [initialized, setInitialized] = useState<boolean>(false);
@@ -41,8 +44,6 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 		});
 		if (error) {
 			throw error;
-		} else {
-			router.replace("/");
 		}
 	};
 
@@ -53,8 +54,6 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 		});
 		if (error) {
 			throw error;
-		} else {
-			router.replace("/");
 		}
 	};
 
@@ -75,6 +74,27 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 			data.subscription.unsubscribe();
 		};
 	}, []);
+
+	useEffect(() => {
+		if (!initialized) return;
+
+		const inProtectedGroup = segments[0] === "(protected)";
+
+		if (session && !inProtectedGroup) {
+			router.replace("/(protected)/home");
+		} else if (!session) {
+			router.replace("/(public)/welcome");
+		}
+
+		/* HACK: Something must be rendered when determining the initial auth state... 
+		instead of creating a loading screen, we use the SplashScreen and hide it after
+		a small delay (500 ms)
+		*/
+
+		setTimeout(() => {
+			SplashScreen.hideAsync();
+		}, 500);
+	}, [initialized, session]);
 
 	return (
 		<SupabaseContext.Provider
