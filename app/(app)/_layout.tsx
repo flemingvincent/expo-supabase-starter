@@ -3,6 +3,7 @@ import { useColorScheme } from "nativewind";
 import React from "react";
 
 import { useSupabase } from "@/context/supabase-provider";
+import { theme } from "@/lib/constants";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -26,7 +27,9 @@ export default function AppLayout() {
 				headerShown: false,
 				tabBarStyle: {
 					backgroundColor:
-						colorScheme === "dark" ? "hsl(240, 10%, 3.9%)" : "hsl(0, 0%, 100%)",
+						colorScheme === "dark"
+							? theme.dark.background
+							: theme.light.background,
 				},
 				tabBarShowLabel: false,
 			}}
