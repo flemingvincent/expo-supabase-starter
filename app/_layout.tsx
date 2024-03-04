@@ -10,10 +10,6 @@ export {
 } from "expo-router";
 
 export default function RootLayout() {
-	return <RootLayoutNav />;
-}
-
-function RootLayoutNav() {
 	return (
 		<SupabaseProvider>
 			<SafeAreaProvider>
@@ -22,10 +18,14 @@ function RootLayoutNav() {
 						headerShown: false,
 					}}
 				>
-					<Stack.Screen name="welcome" />
-					<Stack.Screen name="sign-up" />
-					<Stack.Screen name="sign-in" />
-					<Stack.Screen name="(app)" />
+					<Stack.Screen name="(protected)" />
+					<Stack.Screen name="(public)" />
+					<Stack.Screen
+						name="modal"
+						options={{
+							presentation: "modal",
+						}}
+					/>
 				</Stack>
 			</SafeAreaProvider>
 		</SupabaseProvider>
