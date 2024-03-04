@@ -11,9 +11,9 @@ import {
 import { View } from "react-native";
 import Animated, { FadeInDown, FadeOut } from "react-native-reanimated";
 
-import { Input } from "./input";
-import { Label } from "./label";
-import { Text } from "./typography";
+import { Input } from "./Input";
+import { Label } from "./Label";
+import { Text } from "./Typography";
 
 import { cn } from "@/lib/utils";
 
