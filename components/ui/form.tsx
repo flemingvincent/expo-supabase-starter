@@ -11,10 +11,10 @@ import {
 import { View } from "react-native";
 import Animated, { FadeInDown, FadeOut } from "react-native-reanimated";
 
-import { Input } from "./Input";
-import { Label } from "./Label";
-import { Text } from "./Typography";
+import { Text } from "./text";
 
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 const Form = FormProvider;
@@ -242,6 +242,5 @@ export {
 	FormInput,
 	FormItem,
 	FormLabel,
-	FormMessage,
 	useFormField,
 };

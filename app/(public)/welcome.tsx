@@ -3,7 +3,9 @@ import React from "react";
 import { View } from "react-native";
 
 import { SafeAreaView } from "@/components/safe-area-view";
-import { Button, H1, Muted, P } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Text } from "@/components/ui/text";
+import { H1, Muted } from "@/components/ui/typography";
 
 export default function WelcomeScreen() {
 	const router = useRouter();
@@ -26,7 +28,7 @@ export default function WelcomeScreen() {
 						router.push("/sign-up");
 					}}
 				>
-					<P>Sign up</P>
+					<Text>Sign Up</Text>
 				</Button>
 				<Button
 					className="flex-1"
@@ -36,7 +38,7 @@ export default function WelcomeScreen() {
 						router.push("/sign-in");
 					}}
 				>
-					<P>Sign in</P>
+					<Text>Sign In</Text>
 				</Button>
 			</View>
 		</SafeAreaView>

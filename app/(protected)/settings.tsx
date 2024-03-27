@@ -1,6 +1,8 @@
 import { View } from "react-native";
 
-import { Button, H1, Muted, P } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Text } from "@/components/ui/text";
+import { H1, Muted } from "@/components/ui/typography";
 import { useSupabase } from "@/context/supabase-provider";
 
 export default function TabTwoScreen() {
@@ -20,7 +22,7 @@ export default function TabTwoScreen() {
 					signOut();
 				}}
 			>
-				<P>Sign out</P>
+				<Text>Sign Out</Text>
 			</Button>
 		</View>
 	);
