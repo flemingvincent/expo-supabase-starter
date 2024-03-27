@@ -1,8 +1,8 @@
 import { Tabs } from "expo-router";
-import { useColorScheme } from "nativewind";
 import React from "react";
 
 import { theme } from "@/lib/constants";
+import { useColorScheme } from "@/lib/useColorScheme";
 
 export default function ProtectedLayout() {
 	const { colorScheme } = useColorScheme();

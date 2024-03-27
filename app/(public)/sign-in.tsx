@@ -5,15 +5,10 @@ import { ActivityIndicator, View } from "react-native";
 import * as z from "zod";
 
 import { SafeAreaView } from "@/components/safe-area-view";
-import {
-	Button,
-	Form,
-	FormField,
-	FormInput,
-	H1,
-	Muted,
-	P,
-} from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Form, FormField, FormInput } from "@/components/ui/form";
+import { Text } from "@/components/ui/text";
+import { H1, Muted } from "@/components/ui/typography";
 import { useSupabase } from "@/context/supabase-provider";
 
 const formSchema = z.object({
@@ -96,7 +91,7 @@ export default function SignIn() {
 					{form.formState.isSubmitting ? (
 						<ActivityIndicator size="small" />
 					) : (
-						<P>Sign In</P>
+						<Text>Sign In</Text>
 					)}
 				</Button>
 				<Muted

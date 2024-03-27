@@ -1,7 +1,9 @@
 import { useRouter } from "expo-router";
 import { View } from "react-native";
 
-import { Button, H1, Muted, P } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Text } from "@/components/ui/text";
+import { H1, Muted } from "@/components/ui/typography";
 
 export default function TabOneScreen() {
 	const router = useRouter();
@@ -14,11 +16,14 @@ export default function TabOneScreen() {
 				closing the app.
 			</Muted>
 			<Button
+				className="w-full"
+				variant="default"
+				size="default"
 				onPress={() => {
 					router.push("/modal");
 				}}
 			>
-				<P>Open Modal</P>
+				<Text>Open Modal</Text>
 			</Button>
 		</View>
 	);
