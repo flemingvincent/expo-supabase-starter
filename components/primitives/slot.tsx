@@ -18,7 +18,7 @@ const Pressable = React.forwardRef<
 	React.ElementRef<typeof RNPressable>,
 	RNPressableProps
 >((props, forwardedRef) => {
-	const { children, ...pressableslotProps } = props;
+	const { children, ...pressableSlotProps } = props;
 
 	if (!React.isValidElement(children)) {
 		console.log("Slot.Pressable - Invalid asChild element", children);
@@ -29,7 +29,7 @@ const Pressable = React.forwardRef<
 		React.ComponentPropsWithoutRef<typeof RNPressable>,
 		React.ElementRef<typeof RNPressable>
 	>(isTextChildren(children) ? <></> : children, {
-		...mergeProps(pressableslotProps, children.props),
+		...mergeProps(pressableSlotProps, children.props),
 		ref: forwardedRef
 			? composeRefs(forwardedRef, (children as any).ref)
 			: (children as any).ref,
