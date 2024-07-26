@@ -10,7 +10,7 @@ type SupabaseContextProps = {
 	user: User | null;
 	session: Session | null;
 	initialized?: boolean;
-	signUp: (email: string, password: string) => Promise<void>;
+	signUp: (email: string, password: string, options?: { data: any }) => Promise<void>;
 	signInWithPassword: (email: string, password: string) => Promise<void>;
 	signOut: () => Promise<void>;
 };
@@ -37,10 +37,11 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 	const [session, setSession] = useState<Session | null>(null);
 	const [initialized, setInitialized] = useState<boolean>(false);
 
-	const signUp = async (email: string, password: string) => {
+	const signUp = async (email: string, password: string, options?: { data: any }) => {
 		const { error } = await supabase.auth.signUp({
 			email,
 			password,
+			options,
 		});
 		if (error) {
 			throw error;
