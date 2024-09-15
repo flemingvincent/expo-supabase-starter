@@ -87,7 +87,7 @@ export default function SignIn() {
 					size="default"
 					variant="default"
 					onPress={form.handleSubmit(onSubmit)}
-					disabled={form.formState.isSubmitting}
+					disabled={!form.formState.isValid || form.formState.isSubmitting}
 				>
 					{form.formState.isSubmitting ? (
 						<ActivityIndicator size="small" />
