@@ -185,16 +185,12 @@ const FormInput = React.forwardRef<
 		formMessageNativeID,
 	} = useFormField();
 
-	React.useImperativeHandle(
-		ref,
-		() => {
-			if (!inputRef.current) {
-				return {} as React.ComponentRef<typeof Input>;
-			}
-			return inputRef.current;
-		},
-		[inputRef.current],
-	);
+	React.useImperativeHandle(ref, () => {
+		if (!inputRef.current) {
+			return {} as React.ComponentRef<typeof Input>;
+		}
+		return inputRef.current;
+	}, [inputRef.current]);
 
 	function handleOnLabelPress() {
 		if (!inputRef.current) {

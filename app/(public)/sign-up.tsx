@@ -63,7 +63,7 @@ export default function SignUp() {
 
 	return (
 		<SafeAreaView className="flex-1 bg-background p-4">
-			<View className="flex-1">
+			<View className="flex-1 web:m-4">
 				<H1 className="self-start">Sign Up</H1>
 				<Muted className="self-start mb-5">
 					to continue to Expo Supabase Starter
@@ -116,7 +116,7 @@ export default function SignUp() {
 					</View>
 				</Form>
 			</View>
-			<View className="gap-y-4">
+			<View className="gap-y-4 web:m-4">
 				<Button
 					size="default"
 					variant="default"
