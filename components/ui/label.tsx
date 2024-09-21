@@ -1,6 +1,7 @@
 import * as React from "react";
 
-import * as LabelPrimitive from "@/components/primitives/label";
+import * as LabelPrimitive from "../primitives/label";
+
 import { cn } from "@/lib/utils";
 
 const Label = React.forwardRef<
