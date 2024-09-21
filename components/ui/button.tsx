@@ -70,10 +70,11 @@ const Button = React.forwardRef<
 >(({ className, variant, size, ...props }, ref) => {
 	return (
 		<TextClassContext.Provider
-			value={cn(
-				props.disabled && "web:pointer-events-none",
-				buttonTextVariants({ variant, size }),
-			)}
+			value={buttonTextVariants({
+				variant,
+				size,
+				className: "web:pointer-events-none",
+			})}
 		>
 			<Pressable
 				className={cn(
