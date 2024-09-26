@@ -10,6 +10,8 @@ npm-debug.*
 *.orig.*
 web-build/
 
+
+# Ignore .env file
 .env
 
 # macOS

@@ -5,7 +5,7 @@ import { Text } from "@/components/ui/text";
 import { H1, Muted } from "@/components/ui/typography";
 import { useSupabase } from "@/context/supabase-provider";
 
-export default function TabTwoScreen() {
+export default function Settings() {
 	const { signOut } = useSupabase();
 
 	return (
@@ -18,9 +18,7 @@ export default function TabTwoScreen() {
 				className="w-full"
 				size="default"
 				variant="default"
-				onPress={() => {
-					signOut();
-				}}
+				onPress={signOut}
 			>
 				<Text>Sign Out</Text>
 			</Button>

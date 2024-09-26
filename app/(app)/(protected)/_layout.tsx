@@ -20,8 +20,8 @@ export default function ProtectedLayout() {
 				tabBarShowLabel: false,
 			}}
 		>
-			<Tabs.Screen name="home" />
-			<Tabs.Screen name="settings" />
+			<Tabs.Screen name="index" options={{ title: "Home" }} />
+			<Tabs.Screen name="settings" options={{ title: "Settings" }} />
 		</Tabs>
 	);
 }
