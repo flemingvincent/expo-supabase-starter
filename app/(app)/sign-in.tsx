@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
 import { useForm } from "react-hook-form";
 import { ActivityIndicator, View } from "react-native";
 import * as z from "zod";
@@ -8,7 +7,7 @@ import { SafeAreaView } from "@/components/safe-area-view";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormInput } from "@/components/ui/form";
 import { Text } from "@/components/ui/text";
-import { H1, Muted } from "@/components/ui/typography";
+import { H1 } from "@/components/ui/typography";
 import { useSupabase } from "@/context/supabase-provider";
 
 const formSchema = z.object({
@@ -21,7 +20,6 @@ const formSchema = z.object({
 
 export default function SignIn() {
 	const { signInWithPassword } = useSupabase();
-	const router = useRouter();
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -43,11 +41,8 @@ export default function SignIn() {
 
 	return (
 		<SafeAreaView className="flex-1 bg-background p-4">
-			<View className="flex-1 web:m-4">
-				<H1 className="self-start">Sign In</H1>
-				<Muted className="self-start mb-5">
-					to continue to Expo Supabase Starter
-				</Muted>
+			<View className="flex-1 gap-4 web:m-4">
+				<H1 className="self-start ">Sign In</H1>
 				<Form {...form}>
 					<View className="gap-4">
 						<FormField
@@ -82,29 +77,19 @@ export default function SignIn() {
 					</View>
 				</Form>
 			</View>
-			<View className="gap-y-4 web:m-4">
-				<Button
-					size="default"
-					variant="default"
-					onPress={form.handleSubmit(onSubmit)}
-					disabled={form.formState.isSubmitting}
-				>
-					{form.formState.isSubmitting ? (
-						<ActivityIndicator size="small" />
-					) : (
-						<Text>Sign In</Text>
-					)}
-				</Button>
-				<Muted
-					className="text-center"
-					onPress={() => {
-						router.replace("/sign-up");
-					}}
-				>
-					Don't have an account?{" "}
-					<Muted className="text-foreground">Sign up</Muted>
-				</Muted>
-			</View>
+			<Button
+				size="default"
+				variant="default"
+				onPress={form.handleSubmit(onSubmit)}
+				disabled={form.formState.isSubmitting}
+				className="web:m-4"
+			>
+				{form.formState.isSubmitting ? (
+					<ActivityIndicator size="small" />
+				) : (
+					<Text>Sign In</Text>
+				)}
+			</Button>
 		</SafeAreaView>
 	);
 }
