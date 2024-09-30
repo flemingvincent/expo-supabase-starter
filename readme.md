@@ -4,7 +4,7 @@
 
 ## Introduction
 
-This repository serves as a comprehensive starter project for developing React Native with Expo applications with Supabase as the backend.. It integrates various technologies such as Expo Router for navigation, Tailwind CSS for styling, React-Hook-Form for form handling, Zod for schema validation, and TypeScript for type safety. By leveraging these powerful tools, this starter template provides a robust foundation for building modern, scalable, and efficient mobile applications.
+This repository serves as a comprehensive starter project for developing React Native and Expo applications with Supabase as the backend.. It integrates various technologies such as Expo Router for navigation, Tailwind CSS for styling, React-Hook-Form for form handling, Zod for schema validation, and TypeScript for type safety. By leveraging these powerful tools, this starter template provides a robust foundation for building modern, scalable, and efficient mobile applications.
 
 #### Disclaimer
 
