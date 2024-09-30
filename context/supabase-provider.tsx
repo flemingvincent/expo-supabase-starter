@@ -65,14 +65,16 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 	};
 
 	useEffect(() => {
-		const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+		supabase.auth.getSession().then(({ data: { session } }) => {
 			setSession(session);
 			setUser(session ? session.user : null);
 			setInitialized(true);
 		});
-		return () => {
-			data.subscription.unsubscribe();
-		};
+
+		supabase.auth.onAuthStateChange((_event, session) => {
+			setSession(session);
+			setUser(session ? session.user : null);
+		});
 	}, []);
 
 	useEffect(() => {

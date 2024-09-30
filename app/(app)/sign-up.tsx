@@ -60,7 +60,7 @@ export default function SignUp() {
 	}
 
 	return (
-		<SafeAreaView className="flex-1 bg-background p-4">
+		<SafeAreaView className="flex-1 bg-background p-4" edges={["bottom"]}>
 			<View className="flex-1 gap-4 web:m-4">
 				<H1 className="self-start">Sign Up</H1>
 
