@@ -1,7 +1,7 @@
 import { Tabs } from "expo-router";
 import React from "react";
 
-import { theme } from "@/lib/constants";
+import { colors } from "@/constants/colors";
 import { useColorScheme } from "@/lib/useColorScheme";
 
 export default function ProtectedLayout() {
@@ -14,9 +14,13 @@ export default function ProtectedLayout() {
 				tabBarStyle: {
 					backgroundColor:
 						colorScheme === "dark"
-							? theme.dark.background
-							: theme.light.background,
+							? colors.dark.background
+							: colors.light.background,
 				},
+				tabBarActiveTintColor:
+					colorScheme === "dark"
+						? colors.dark.foreground
+						: colors.light.foreground,
 				tabBarShowLabel: false,
 			}}
 		>
