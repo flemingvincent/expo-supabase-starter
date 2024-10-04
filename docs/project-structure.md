@@ -13,6 +13,8 @@ root
 |
 +-- config            # This directory contains all the configuration files for your application.
 |
++-- constants         # This directory contains all the constants used within the application.
+|
 +-- context           # This directory contains all the providers used within the application.
 |
 +-- lib               # This directory contains different libraries preconfigured for the application.

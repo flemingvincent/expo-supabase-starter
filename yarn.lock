@@ -3994,10 +3994,10 @@ expo-linking@~6.3.1:
     expo-constants "~16.0.0"
     invariant "^2.2.4"
 
-expo-modules-autolinking@1.11.2:
-  version "1.11.2"
-  resolved "https://registry.yarnpkg.com/expo-modules-autolinking/-/expo-modules-autolinking-1.11.2.tgz#98245eb66f157bbfebebd2d576256ea7c683c605"
-  integrity sha512-fdcaNO8ucHA3yLNY52ZUENBcAG7KEx8QyMmnVNavO1JVBGRMZG8JyVcbrhYQDtVtpxkbai5YzwvLutINvbDZDQ==
+expo-modules-autolinking@1.11.3:
+  version "1.11.3"
+  resolved "https://registry.yarnpkg.com/expo-modules-autolinking/-/expo-modules-autolinking-1.11.3.tgz#bc64d278c04015014bb5802e3cfcd942d7c07168"
+  integrity sha512-oYh8EZEvYF5TYppxEKUTTJmbr8j7eRRnrIxzZtMvxLTXoujThVPMFS/cbnSnf2bFm1lq50TdDNABhmEi7z0ngQ==
   dependencies:
     chalk "^4.1.0"
     commander "^7.2.0"
@@ -4007,10 +4007,10 @@ expo-modules-autolinking@1.11.2:
     require-from-string "^2.0.2"
     resolve-from "^5.0.0"
 
-expo-modules-core@1.12.24:
-  version "1.12.24"
-  resolved "https://registry.yarnpkg.com/expo-modules-core/-/expo-modules-core-1.12.24.tgz#8c35a16ed6ecb8997f6bd527fc95a8c22f343602"
-  integrity sha512-3geIe2ecizlp7l26iY8Nmc59z2d1RUC5nQZtI9iJoi5uHEUV/zut8e4zRLFVnZb8KOcMcEDsrvaBL5DPnqdfpg==
+expo-modules-core@1.12.25:
+  version "1.12.25"
+  resolved "https://registry.yarnpkg.com/expo-modules-core/-/expo-modules-core-1.12.25.tgz#9ec8d8762da92d961ab1044817da033ae617c9f4"
+  integrity sha512-HB2LS2LEM41Xq1bG+Jtzqm6XgPaa+mM9BAvCdX1lDGMQ9Ay9vMTL/GVEs2gpsINPofICopjBRwD+wftyCbVrzg==
   dependencies:
     invariant "^2.2.4"
 
@@ -4054,10 +4054,10 @@ expo-system-ui@~3.0.7:
     "@react-native/normalize-colors" "0.74.85"
     debug "^4.3.2"
 
-expo@~51.0.35:
-  version "51.0.35"
-  resolved "https://registry.yarnpkg.com/expo/-/expo-51.0.35.tgz#08c78785e6510e010b4b43c3bc89718d6ae616bc"
-  integrity sha512-sSYor9C8oAmHcYfW50gxdLEug8xVO3+cE9eX49caiWj6Xp9hkYvDNw/PxLY/mm84DYq79FAbOWj6KAOYChO4Sw==
+expo@~51.0.36:
+  version "51.0.36"
+  resolved "https://registry.yarnpkg.com/expo/-/expo-51.0.36.tgz#546fe4ec1670660b50088bb19e640732757c0c3a"
+  integrity sha512-eQIC0l6fz3p4cU/hV8+QcyKSacyROhaoA1oohfCD6I3F09dxmC8b3SESpzGqHfuq8wsgcUc4q8ckX7ec25IV1g==
   dependencies:
     "@babel/runtime" "^7.20.0"
     "@expo/cli" "0.18.30"
@@ -4070,8 +4070,8 @@ expo@~51.0.35:
     expo-file-system "~17.0.1"
     expo-font "~12.0.10"
     expo-keep-awake "~13.0.2"
-    expo-modules-autolinking "1.11.2"
-    expo-modules-core "1.12.24"
+    expo-modules-autolinking "1.11.3"
+    expo-modules-core "1.12.25"
     fbemitter "^3.0.0"
     whatwg-url-without-unicode "8.0.0-3"
 
