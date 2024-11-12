@@ -8,6 +8,7 @@
 		"icon": "./assets/icon.png",
 		"userInterfaceStyle": "automatic",
 		"assetBundlePatterns": ["**/*"],
+		"newArchEnabled": true,
 		"ios": {
 			"supportsTablet": true,
 			"config": {

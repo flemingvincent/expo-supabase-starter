@@ -11,7 +11,7 @@ export default function AppLayout() {
 	const { colorScheme } = useColorScheme();
 
 	return (
-		<Stack screenOptions={{ headerShown: false }}>
+		<Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
 			<Stack.Screen name="(protected)" />
 			<Stack.Screen name="welcome" />
 			<Stack.Screen
@@ -30,6 +30,7 @@ export default function AppLayout() {
 						colorScheme === "dark"
 							? colors.dark.foreground
 							: colors.light.foreground,
+					gestureEnabled: true,
 				}}
 			/>
 			<Stack.Screen
@@ -48,6 +49,7 @@ export default function AppLayout() {
 						colorScheme === "dark"
 							? colors.dark.foreground
 							: colors.light.foreground,
+					gestureEnabled: true,
 				}}
 			/>
 			<Stack.Screen
@@ -66,6 +68,7 @@ export default function AppLayout() {
 						colorScheme === "dark"
 							? colors.dark.foreground
 							: colors.light.foreground,
+					gestureEnabled: true,
 				}}
 			/>
 		</Stack>
