@@ -1,4 +1,4 @@
-# Expo Supabase Starter [![MIT License](https://img.shields.io/github/license/FlemingVincent/expo-supabase-starter)](https://github.com/FlemingVincent/expo-supabase-starter/blob/main/LICENSE)
+# Expo Supabase Starter
 
 ![social-preview-dark](https://github.com/user-attachments/assets/bcee6db2-6dd0-435f-8255-3f4b36b4cfdc)
 
