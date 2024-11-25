@@ -80,10 +80,10 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 	useEffect(() => {
 		if (!initialized) return;
 
-		const inProtectedGroup = segments[0] === "(protected)";
+		const inProtectedGroup = segments[1] === "(protected)";
 
 		if (session && !inProtectedGroup) {
-			router.replace("/(app)/(protected)/");
+			router.replace("/(app)/(protected)");
 		} else if (!session) {
 			router.replace("/(app)/welcome");
 		}
