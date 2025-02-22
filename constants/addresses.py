@@ -7,14 +7,12 @@ def get_map_of_addresses():
         "Library" : {
             "Locations" : {
                 "Shannon Library" : "160 McCormick Rd, Charlottesville, VA 22904",
-                "Clemmons Library" : "164 McCormick Rd, Charlottesville, VA 22903",
-                "Brown Library" : "291 McCormick Rd, Charlottesville, VA 22903",
             }
         },
 
         "Gym" : {
             "Locations" : {
-                "Slaughter Recreation Center" : "505 Edgemont Rd, Charlottesville, VA 22903",
+                "Memorial Gym" : "210 Emmet St S, Charlottesville, VA 22903",
             }
         },
 
