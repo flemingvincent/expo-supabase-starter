@@ -1,0 +1,11 @@
+{
+  "category": "Library",
+  "location_key": "Clem",
+  "name": "Clemens Library",
+  "coordinates": {
+    "latitude": 37.7248,
+    "longitude": -122.4192
+  },
+  "radius": 20,
+  "description": "Main undergraduate library"
+}
