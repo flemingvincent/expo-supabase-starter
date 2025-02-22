@@ -32,7 +32,7 @@ def get_map_of_addresses():
 
         "Dining" : {
             "Locations" : {
-                "Observatory Hill DIning Hall" : "525 McCormick Rd, Charlottesville, VA 22904",
+                "Observatory Hill Dining Hall" : "525 McCormick Rd, Charlottesville, VA 22904",
             }
         }
     }
