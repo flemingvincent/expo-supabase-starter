@@ -4,24 +4,25 @@ from geopy.distance import geodesic
 import addresses
 import coordinates_and_radius
 
+"""Returns a map of place categories, locations, and the locations coordinates."""
 def get_map_of_coordinates():
 
-     # Get a map of location addresses
+    # Get a map of location addresses
     map_of_addresses = addresses.get_map_of_addresses()
-    
-    # Dictionary to store the updated results
-    map_of_coordinates_and_radius = {}
 
     # Replace the values from addresses to coordinates and radius
-    for address, location in map_of_addresses.items():
-        result = get_coordinates_and_radius(address)
-        if result:  # If the result is not None
-            map_of_coordinates_and_radius[address] = result
+    for locations in map_of_addresses.values():
+        for specific_place in locations.values():
+            for place, address in specific_place.items():  # Correct iteration over items
+                result = get_coordinates_and_radius(address)
+                if result:  # If the result is not None
+                    # Replace the address with the result in the map
+                    specific_place[place] = result
 
-    # You can return this dictionary or process it further
-    return map_of_coordinates_and_radius
+    # You can return the updated map
+    return map_of_addresses
 
-
+"""Calculates the coordinates and returns a map including them."""
 def get_coordinates_and_radius(address):
 
     headers = {
