@@ -1,3 +1,5 @@
+import { useNavigation } from "@react-navigation/native";
+import { router } from "expo-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { ActivityIndicator, View } from "react-native";
@@ -21,6 +23,8 @@ const formSchema = z.object({
 export default function SignIn() {
 	const { signInWithPassword } = useSupabase();
 
+	const navigation = useNavigation();
+
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -34,6 +38,9 @@ export default function SignIn() {
 			await signInWithPassword(data.email, data.password);
 
 			form.reset();
+
+
+
 		} catch (error: Error | any) {
 			console.log(error.message);
 		}
