@@ -1,52 +1,53 @@
 // Import directly from the URL
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0"
+import { getCampusLocations } from "../../constants/campus_locations.ts"
 
-interface Location {
-  coordinates: {
-    latitude: number;
-    longitude: number;
-  };
-  radius: number;
-}
+// interface Location {
+//   coordinates: {
+//     latitude: number;
+//     longitude: number;
+//   };
+//   radius: number;
+// }
 
-const CAMPUS_LOCATIONS = {
-  "Library": {
-    "locations": {
-      "Shannon": {
-        "coordinates": {
-          "latitude": 37.7249,
-          "longitude": -122.4194
-        },
-        "radius": 15
-      },
-      "Clem": {
-        "coordinates": {
-          "latitude": 37.7248,
-          "longitude": -122.4192
-        },
-        "radius": 20
-      }
-    }
-  },
-  "Gym": {
-    "locations": {
-      "North Grounds": {
-        "coordinates": {
-          "latitude": 37.7244,
-          "longitude": -122.4188
-        },
-        "radius": 35
-      },
-      "AFC": {
-        "coordinates": {
-          "latitude": 37.7243,
-          "longitude": -122.4187
-        },
-        "radius": 30
-      }
-    }
-  }
-};
+// const CAMPUS_LOCATIONS = {
+//   "Library": {
+//     "locations": {
+//       "Shannon": {
+//         "coordinates": {
+//           "latitude": 37.7249,
+//           "longitude": -122.4194
+//         },
+//         "radius": 15
+//       },
+//       "Clem": {
+//         "coordinates": {
+//           "latitude": 37.7248,
+//           "longitude": -122.4192
+//         },
+//         "radius": 20
+//       }
+//     }
+//   },
+//   "Gym": {
+//     "locations": {
+//       "North Grounds": {
+//         "coordinates": {
+//           "latitude": 37.7244,
+//           "longitude": -122.4188
+//         },
+//         "radius": 35
+//       },
+//       "AFC": {
+//         "coordinates": {
+//           "latitude": 37.7243,
+//           "longitude": -122.4187
+//         },
+//         "radius": 30
+//       }
+//     }
+//   }
+// };
 
 // Initialize Supabase client
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
@@ -57,6 +58,7 @@ console.log("Random Location Function Started!");
 
 Deno.serve(async (req) => {
   try {
+    const CAMPUS_LOCATIONS = await getCampusLocations();
     // Get random category
     const categories = Object.keys(CAMPUS_LOCATIONS);
     const randomCategory = categories[Math.floor(Math.random() * categories.length)];
@@ -71,8 +73,11 @@ Deno.serve(async (req) => {
     const locationData = {
       category: randomCategory,
       name: `${randomLocationName} ${randomCategory}`,
-      coordinates: selectedLocation.coordinates,
-      radius: selectedLocation.radius,
+      coordinates: {
+        latitude, 
+        longitude
+      }, 
+      radius,
       created_at: new Date().toISOString()
     };
 
