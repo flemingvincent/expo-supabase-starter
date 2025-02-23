@@ -1,0 +1,29 @@
+{
+  "Library": {
+    "Locations": {
+      "Shannon Library": "38.0361361, -78.505741, radius: 0.007"
+    }
+  },
+  "Gym": {
+    "Locations": {
+      "Memorial Gym": "38.03740715, -78.50718629317271, radius: 0.06"
+    }
+  },
+  "Athletic": {
+    "Locations": {
+      "John Paul Jones Arena": "38.04533959375, -78.507128328125, radius: 0.007",
+      "Lambeth Field": "38.04172135530057, -78.50174004131011, radius: 0.0805"
+    }
+  },
+  "Academic": {
+    "Locations": {
+      "The Rotunda": "38.03563715, -78.50339046615258, radius: 0.05",
+      "Rice Hall": "38.0317528, -78.5108897, radius: 0.007"
+    }
+  },
+  "Dining": {
+    "Locations": {
+      "Observatory Hill Dining Hall": "38.03709824462747, -78.51466553124696, radius: 0.2165"
+    }
+  }
+}

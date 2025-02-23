@@ -28,56 +28,59 @@ interface TriviaEvent extends BaseEvent {
 type Event = TriviaEvent; // Add new event types here with union type
 
 // Predefined events
+// In random-events/index.ts
 const EVENTS: Event[] = [
+    // Gym category questions (generic fitness/sports)
     {
         id: 1,
         type: 'trivia',
-        name: 'Library History',
-        description: 'Test your knowledge about the library!',
+        name: 'Fitness Knowledge',
+        description: 'Test your fitness knowledge!',
         points: 50,
         timeLimit: 2,
-        question: "What year was Shannon Library established?",
-        correctAnswer: "1985",
-        wrongAnswers: ["1975", "1995", "2005"],
-        category: "Library"
+        question: "How many minutes of exercise are recommended daily for adults?",
+        correctAnswer: "30",
+        wrongAnswers: ["15", "45", "60"],
+        category: "Gym"
     },
     {
         id: 2,
         type: 'trivia',
-        name: 'Gym Facts',
-        description: 'How well do you know the AFC?',
+        name: 'Sports Facts',
+        description: 'How well do you know sports?',
         points: 30,
         timeLimit: 2,
-        question: "How many basketball courts are in the AFC?",
-        correctAnswer: "3",
-        wrongAnswers: ["2", "4", "5"],
+        question: "Which muscle group does a push-up primarily target?",
+        correctAnswer: "Chest",
+        wrongAnswers: ["Back", "Legs", "Abs"],
         category: "Gym"
     },
+    
+    // Library category questions (general knowledge/books)
     {
         id: 3,
         type: 'trivia',
-        name: 'Library Services',
-        description: 'Know your library services!',
+        name: 'Book Knowledge',
+        description: 'Test your literary knowledge!',
         points: 40,
         timeLimit: 2,
-        question: "What floor is the quiet study area on?",
-        correctAnswer: "4th Floor",
-        wrongAnswers: ["1st Floor", "2nd Floor", "3rd Floor"],
+        question: "Who wrote 'To Kill a Mockingbird'?",
+        correctAnswer: "Harper Lee",
+        wrongAnswers: ["John Steinbeck", "Ernest Hemingway", "F. Scott Fitzgerald"],
         category: "Library"
     },
     {
         id: 4,
         type: 'trivia',
-        name: 'Gym Equipment',
-        description: 'Test your gym knowledge!',
+        name: 'Literature Quiz',
+        description: 'How well do you know books?',
         points: 35,
         timeLimit: 2,
-        question: "How many treadmills are in the cardio area?",
-        correctAnswer: "12",
-        wrongAnswers: ["8", "10", "15"],
-        category: "Gym"
+        question: "What is the Dewey Decimal System used for?",
+        correctAnswer: "Organizing books",
+        wrongAnswers: ["Writing books", "Publishing books", "Selling books"],
+        category: "Library"
     }
-    // Add more trivia questions as needed
 ];
 
 // Initialize Supabase client

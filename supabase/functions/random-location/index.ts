@@ -1,53 +1,6 @@
-// Import directly from the URL
+// supabase/functions/random-location/index.ts
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0"
-import { getCampusLocations } from "../../constants/campus_locations.ts"
-
-// interface Location {
-//   coordinates: {
-//     latitude: number;
-//     longitude: number;
-//   };
-//   radius: number;
-// }
-
-// const CAMPUS_LOCATIONS = {
-//   "Library": {
-//     "locations": {
-//       "Shannon": {
-//         "coordinates": {
-//           "latitude": 37.7249,
-//           "longitude": -122.4194
-//         },
-//         "radius": 15
-//       },
-//       "Clem": {
-//         "coordinates": {
-//           "latitude": 37.7248,
-//           "longitude": -122.4192
-//         },
-//         "radius": 20
-//       }
-//     }
-//   },
-//   "Gym": {
-//     "locations": {
-//       "North Grounds": {
-//         "coordinates": {
-//           "latitude": 37.7244,
-//           "longitude": -122.4188
-//         },
-//         "radius": 35
-//       },
-//       "AFC": {
-//         "coordinates": {
-//           "latitude": 37.7243,
-//           "longitude": -122.4187
-//         },
-//         "radius": 30
-//       }
-//     }
-//   }
-// };
+import LOCATIONS from './locations.json' assert { type: "json" };
 
 // Initialize Supabase client
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
@@ -58,26 +11,31 @@ console.log("Random Location Function Started!");
 
 Deno.serve(async (req) => {
   try {
-    const CAMPUS_LOCATIONS = await getCampusLocations();
     // Get random category
-    const categories = Object.keys(CAMPUS_LOCATIONS);
+    const categories = Object.keys(LOCATIONS);
     const randomCategory = categories[Math.floor(Math.random() * categories.length)];
 
     // Get random location from category
-    const locations = CAMPUS_LOCATIONS[randomCategory].locations;
+    const locations = LOCATIONS[randomCategory].Locations; // Note: "Locations" with capital L
     const locationNames = Object.keys(locations);
     const randomLocationName = locationNames[Math.floor(Math.random() * locationNames.length)];
-    const selectedLocation = locations[randomLocationName];
+    const locationString = locations[randomLocationName];
+
+    // Parse the location string
+    const [latStr, lonStr, radiusStr] = locationString.split(', ');
+    const latitude = parseFloat(latStr);
+    const longitude = parseFloat(lonStr);
+    const radius = parseFloat(radiusStr.split(': ')[1]) * 1000; // Convert to meters
 
     // Format location data
     const locationData = {
       category: randomCategory,
-      name: `${randomLocationName} ${randomCategory}`,
+      name: randomLocationName,
       coordinates: {
-        latitude, 
+        latitude,
         longitude
-      }, 
-      radius,
+      },
+      radius: Math.round(radius), // Round to nearest meter
       created_at: new Date().toISOString()
     };
 
