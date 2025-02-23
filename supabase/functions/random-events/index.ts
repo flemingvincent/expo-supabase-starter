@@ -1,85 +1,124 @@
-// Setup type definitions for built-in Supabase Runtime APIs
+// supabase/functions/random-events/index.ts
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0"
 
 // Define types for events
-interface BaseEvent {
+interface TriviaQuestion {
     id: number;
-    type: string;
+    type: 'trivia';
     name: string;
     description: string;
     points: number;
-    timeLimit: number; // in minutes
-}
-
-interface TriviaEvent extends BaseEvent {
-    type: 'trivia';
+    timeLimit: number;
     question: string;
     correctAnswer: string;
     wrongAnswers: string[];
     category: string;
 }
 
-// Add new event types here in the future
-// interface NewEventType extends BaseEvent {
-//     type: 'new_type';
-//     // additional properties
-// }
-
-type Event = TriviaEvent; // Add new event types here with union type
-
-// Predefined events
-// In random-events/index.ts
-const EVENTS: Event[] = [
-    // Gym category questions (generic fitness/sports)
+// All trivia questions stored here
+const TRIVIA_QUESTIONS: TriviaQuestion[] = [
+    // Academic Category
     {
         id: 1,
         type: 'trivia',
-        name: 'Fitness Knowledge',
-        description: 'Test your fitness knowledge!',
+        name: 'Rotunda History',
+        description: 'Test your knowledge about the Rotunda!',
         points: 50,
         timeLimit: 2,
-        question: "How many minutes of exercise are recommended daily for adults?",
-        correctAnswer: "30",
-        wrongAnswers: ["15", "45", "60"],
-        category: "Gym"
+        question: "How many columns are on the front of the Rotunda?",
+        correctAnswer: "6",
+        wrongAnswers: ["4", "8", "10"],
+        category: "Academic"
     },
     {
         id: 2,
         type: 'trivia',
-        name: 'Sports Facts',
-        description: 'How well do you know sports?',
-        points: 30,
+        name: 'UVA History',
+        description: 'How well do you know UVA?',
+        points: 40,
         timeLimit: 2,
-        question: "Which muscle group does a push-up primarily target?",
-        correctAnswer: "Chest",
-        wrongAnswers: ["Back", "Legs", "Abs"],
-        category: "Gym"
+        question: "What year was UVA founded?",
+        correctAnswer: "1819",
+        wrongAnswers: ["1776", "1801", "1826"],
+        category: "Academic"
     },
     
-    // Library category questions (general knowledge/books)
+    // Athletic Category
     {
         id: 3,
         type: 'trivia',
-        name: 'Book Knowledge',
-        description: 'Test your literary knowledge!',
-        points: 40,
+        name: 'JPJ Facts',
+        description: 'Test your JPJ Arena knowledge!',
+        points: 35,
         timeLimit: 2,
-        question: "Who wrote 'To Kill a Mockingbird'?",
-        correctAnswer: "Harper Lee",
-        wrongAnswers: ["John Steinbeck", "Ernest Hemingway", "F. Scott Fitzgerald"],
-        category: "Library"
+        question: "What is the capacity of John Paul Jones Arena?",
+        correctAnswer: "14,593",
+        wrongAnswers: ["12,500", "16,000", "18,000"],
+        category: "Athletic"
     },
     {
         id: 4,
         type: 'trivia',
-        name: 'Literature Quiz',
-        description: 'How well do you know books?',
-        points: 35,
+        name: 'Sports History',
+        description: 'UVA Sports History Quiz',
+        points: 45,
         timeLimit: 2,
-        question: "What is the Dewey Decimal System used for?",
-        correctAnswer: "Organizing books",
-        wrongAnswers: ["Writing books", "Publishing books", "Selling books"],
+        question: "What year did JPJ Arena open?",
+        correctAnswer: "2006",
+        wrongAnswers: ["2004", "2008", "2010"],
+        category: "Athletic"
+    },
+
+    // Library Category
+    {
+        id: 5,
+        type: 'trivia',
+        name: 'Library Knowledge',
+        description: 'Test your library knowledge!',
+        points: 30,
+        timeLimit: 2,
+        question: "How many floors are in Shannon Library?",
+        correctAnswer: "4",
+        wrongAnswers: ["3", "5", "6"],
         category: "Library"
+    },
+    {
+        id: 6,
+        type: 'trivia',
+        name: 'Library Facts',
+        description: 'Know your libraries!',
+        points: 40,
+        timeLimit: 2,
+        question: "What type of library is Shannon?",
+        correctAnswer: "Engineering",
+        wrongAnswers: ["Medical", "Law", "Business"],
+        category: "Library"
+    },
+
+    // Dining Category
+    {
+        id: 7,
+        type: 'trivia',
+        name: 'Dining Hours',
+        description: 'Test your dining knowledge!',
+        points: 25,
+        timeLimit: 2,
+        question: "What time does O-Hill open for breakfast?",
+        correctAnswer: "7:00 AM",
+        wrongAnswers: ["6:00 AM", "8:00 AM", "9:00 AM"],
+        category: "Dining"
+    },
+    {
+        id: 8,
+        type: 'trivia',
+        name: 'Dining Locations',
+        description: 'Know your dining halls!',
+        points: 30,
+        timeLimit: 2,
+        question: "Which dining hall is located on Observatory Hill?",
+        correctAnswer: "O-Hill",
+        wrongAnswers: ["Runk", "Fresh Food Co.", "Newcomb"],
+        category: "Dining"
     }
 ];
 
@@ -95,36 +134,36 @@ Deno.serve(async (req) => {
         // Get location category from request
         const { category } = await req.json();
 
-        // Filter events by category and type
-        const availableEvents = EVENTS.filter(event => 
-            event.category === category && event.type === 'trivia'
-        );
+        // Filter questions by category
+        const availableQuestions = TRIVIA_QUESTIONS.filter(q => q.category === category);
 
-        if (availableEvents.length === 0) {
+        if (availableQuestions.length === 0) {
             throw new Error(`No trivia questions available for category: ${category}`);
         }
 
-        // Select random event
-        const randomEvent = availableEvents[Math.floor(Math.random() * availableEvents.length)];
+        // Select random question
+        const randomQuestion = availableQuestions[
+            Math.floor(Math.random() * availableQuestions.length)
+        ];
 
-        // Prepare trivia response
+        // Prepare answers in random order
         const allAnswers = [
-            randomEvent.correctAnswer,
-            ...randomEvent.wrongAnswers
+            randomQuestion.correctAnswer,
+            ...randomQuestion.wrongAnswers
         ].sort(() => Math.random() - 0.5);
 
         // Format response (excluding correct answer)
         const response = {
             event: {
-                id: randomEvent.id,
-                type: randomEvent.type,
-                name: randomEvent.name,
-                description: randomEvent.description,
-                points: randomEvent.points,
-                timeLimit: randomEvent.timeLimit,
-                question: randomEvent.question,
+                id: randomQuestion.id,
+                type: randomQuestion.type,
+                name: randomQuestion.name,
+                description: randomQuestion.description,
+                points: randomQuestion.points,
+                timeLimit: randomQuestion.timeLimit,
+                question: randomQuestion.question,
                 answers: allAnswers,
-                category: randomEvent.category
+                category: randomQuestion.category
             },
             startTime: new Date().toISOString()
         };
