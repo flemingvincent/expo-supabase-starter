@@ -1,0 +1,15 @@
+HTTP/2 500 
+date: Sun, 23 Feb 2025 00:40:37 GMT
+content-length: 21
+cf-ray: 91632a63d9dfc95e-IAD
+cf-cache-status: DYNAMIC
+strict-transport-security: max-age=31536000; includeSubDomains
+vary: Accept-Encoding
+sb-project-ref: fshaklvzcnmbxelegzyy
+x-deno-execution-id: df044cae-499d-4b31-80bd-09be5c3e63a2
+x-sb-edge-region: us-east-1
+x-served-by: supabase-edge-runtime
+server: cloudflare
+alt-svc: h3=":443"; ma=86400
+
+Internal Server Error
