@@ -1,6 +1,6 @@
 import { Session, User } from "@supabase/supabase-js";
 import { useRouter, useSegments, SplashScreen } from "expo-router";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 
 import { supabase } from "@/config/supabase";
 
@@ -13,6 +13,7 @@ type SupabaseContextProps = {
 	signUp: (email: string, password: string) => Promise<void>;
 	signInWithPassword: (email: string, password: string) => Promise<void>;
 	signOut: () => Promise<void>;
+	onLayoutRootView: () => Promise<void>;
 };
 
 type SupabaseProviderProps = {
@@ -23,9 +24,10 @@ export const SupabaseContext = createContext<SupabaseContextProps>({
 	user: null,
 	session: null,
 	initialized: false,
-	signUp: async () => {},
-	signInWithPassword: async () => {},
-	signOut: async () => {},
+	signUp: async () => { },
+	signInWithPassword: async () => { },
+	signOut: async () => { },
+	onLayoutRootView: async () => { },
 });
 
 export const useSupabase = () => useContext(SupabaseContext);
@@ -36,6 +38,7 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 	const [user, setUser] = useState<User | null>(null);
 	const [session, setSession] = useState<Session | null>(null);
 	const [initialized, setInitialized] = useState<boolean>(false);
+	const [appIsReady, setAppIsReady] = useState<boolean>(false);
 
 	const signUp = async (email: string, password: string) => {
 		const { error } = await supabase.auth.signUp({
@@ -65,20 +68,31 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 	};
 
 	useEffect(() => {
-		supabase.auth.getSession().then(({ data: { session } }) => {
-			setSession(session);
-			setUser(session ? session.user : null);
-			setInitialized(true);
-		});
+		async function prepare() {
+			try {
+				const { data: { session } } = await supabase.auth.getSession();
+				setSession(session);
+				setUser(session ? session.user : null);
+				setInitialized(true);
 
-		supabase.auth.onAuthStateChange((_event, session) => {
-			setSession(session);
-			setUser(session ? session.user : null);
-		});
+				const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+					setSession(session);
+					setUser(session ? session.user : null);
+				});
+
+				await new Promise(resolve => setTimeout(resolve, 100));
+			} catch (e) {
+				console.warn(e);
+			} finally {
+				setAppIsReady(true);
+			}
+		}
+
+		prepare();
 	}, []);
 
 	useEffect(() => {
-		if (!initialized) return;
+		if (!initialized || !appIsReady) return;
 
 		const inProtectedGroup = segments[1] === "(protected)";
 
@@ -87,16 +101,17 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 		} else if (!session) {
 			router.replace("/(app)/welcome");
 		}
+	}, [initialized, appIsReady, session]);
 
-		/* HACK: Something must be rendered when determining the initial auth state... 
-		instead of creating a loading screen, we use the SplashScreen and hide it after
-		a small delay (500 ms)
-		*/
+	const onLayoutRootView = useCallback(async () => {
+		if (appIsReady) {
+			await SplashScreen.hideAsync();
+		}
+	}, [appIsReady]);
 
-		setTimeout(() => {
-			SplashScreen.hideAsync();
-		}, 500);
-	}, [initialized, session]);
+	if (!initialized || !appIsReady) {
+		return null;
+	}
 
 	return (
 		<SupabaseContext.Provider
@@ -107,6 +122,7 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
 				signUp,
 				signInWithPassword,
 				signOut,
+				onLayoutRootView,
 			}}
 		>
 			{children}
