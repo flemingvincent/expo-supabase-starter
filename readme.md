@@ -1,6 +1,6 @@
 # Expo Supabase Starter
 
-![social-preview-dark](https://github.com/user-attachments/assets/bcee6db2-6dd0-435f-8255-3f4b36b4cfdc)
+![social-preview-dark](https://github.com/user-attachments/assets/9697a7da-10aa-4661-bb76-b5bc0dd611f0)
 
 ## Introduction
 
