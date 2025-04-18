@@ -12,15 +12,15 @@ import { useColorScheme } from "@/lib/useColorScheme";
 export default function WelcomeScreen() {
 	const router = useRouter();
 	const { colorScheme } = useColorScheme();
-	const appIcon = colorScheme === "dark" ? require("@/assets/icon.png") : require("@/assets/icon-dark.png");
+	const appIcon =
+		colorScheme === "dark"
+			? require("@/assets/icon.png")
+			: require("@/assets/icon-dark.png");
 
 	return (
 		<SafeAreaView className="flex flex-1 bg-background p-4">
 			<View className="flex flex-1 items-center justify-center gap-y-4 web:m-4">
-				<Image
-					source={appIcon}
-					className="w-16 h-16 rounded-xl"
-				/>
+				<Image source={appIcon} className="w-16 h-16 rounded-xl" />
 				<H1 className="text-center">Welcome to Expo Supabase Starter</H1>
 				<Muted className="text-center">
 					A comprehensive starter project for developing React Native and Expo

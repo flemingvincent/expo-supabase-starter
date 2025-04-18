@@ -24,9 +24,9 @@ type AuthState = {
 export const AuthContext = createContext<AuthState>({
 	initialized: false,
 	session: null,
-	signUp: async () => { },
-	signIn: async () => { },
-	signOut: async () => { },
+	signUp: async () => {},
+	signIn: async () => {},
+	signOut: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -106,6 +106,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 				router.replace("/welcome");
 			}
 		}
+		// eslint-disable-next-line
 	}, [initialized, session]);
 
 	return (
