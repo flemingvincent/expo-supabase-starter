@@ -1,131 +1,124 @@
-import { Session, User } from "@supabase/supabase-js";
-import { useRouter, useSegments, SplashScreen } from "expo-router";
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import {
+	createContext,
+	PropsWithChildren,
+	useContext,
+	useEffect,
+	useState,
+} from "react";
+import { SplashScreen, useRouter } from "expo-router";
+
+import { Session } from "@supabase/supabase-js";
 
 import { supabase } from "@/config/supabase";
 
 SplashScreen.preventAutoHideAsync();
 
-type SupabaseContextProps = {
-	user: User | null;
+type AuthState = {
+	initialized: boolean;
 	session: Session | null;
-	initialized?: boolean;
 	signUp: (email: string, password: string) => Promise<void>;
-	signInWithPassword: (email: string, password: string) => Promise<void>;
+	signIn: (email: string, password: string) => Promise<void>;
 	signOut: () => Promise<void>;
-	onLayoutRootView: () => Promise<void>;
 };
 
-type SupabaseProviderProps = {
-	children: React.ReactNode;
-};
-
-export const SupabaseContext = createContext<SupabaseContextProps>({
-	user: null,
-	session: null,
+export const AuthContext = createContext<AuthState>({
 	initialized: false,
+	session: null,
 	signUp: async () => { },
-	signInWithPassword: async () => { },
+	signIn: async () => { },
 	signOut: async () => { },
-	onLayoutRootView: async () => { },
 });
 
-export const useSupabase = () => useContext(SupabaseContext);
+export const useAuth = () => useContext(AuthContext);
 
-export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
-	const router = useRouter();
-	const segments = useSegments();
-	const [user, setUser] = useState<User | null>(null);
+export function AuthProvider({ children }: PropsWithChildren) {
+	const [initialized, setInitialized] = useState(false);
 	const [session, setSession] = useState<Session | null>(null);
-	const [initialized, setInitialized] = useState<boolean>(false);
-	const [appIsReady, setAppIsReady] = useState<boolean>(false);
+	const router = useRouter();
 
 	const signUp = async (email: string, password: string) => {
-		const { error } = await supabase.auth.signUp({
+		const { data, error } = await supabase.auth.signUp({
 			email,
 			password,
 		});
+
 		if (error) {
-			throw error;
+			console.error("Error signing up:", error);
+			return;
+		}
+
+		if (data.session) {
+			setSession(data.session);
+			console.log("User signed up:", data.user);
+		} else {
+			console.log("No user returned from sign up");
 		}
 	};
 
-	const signInWithPassword = async (email: string, password: string) => {
-		const { error } = await supabase.auth.signInWithPassword({
+	const signIn = async (email: string, password: string) => {
+		const { data, error } = await supabase.auth.signInWithPassword({
 			email,
 			password,
 		});
+
 		if (error) {
-			throw error;
+			console.error("Error signing in:", error);
+			return;
+		}
+
+		if (data.session) {
+			setSession(data.session);
+			console.log("User signed in:", data.user);
+		} else {
+			console.log("No user returned from sign in");
 		}
 	};
 
 	const signOut = async () => {
 		const { error } = await supabase.auth.signOut();
+
 		if (error) {
-			throw error;
+			console.error("Error signing out:", error);
+			return;
+		} else {
+			console.log("User signed out");
 		}
 	};
 
 	useEffect(() => {
-		async function prepare() {
-			try {
-				const { data: { session } } = await supabase.auth.getSession();
-				setSession(session);
-				setUser(session ? session.user : null);
-				setInitialized(true);
+		supabase.auth.getSession().then(({ data: { session } }) => {
+			setSession(session);
+		});
 
-				const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-					setSession(session);
-					setUser(session ? session.user : null);
-				});
+		supabase.auth.onAuthStateChange((_event, session) => {
+			setSession(session);
+		});
 
-				await new Promise(resolve => setTimeout(resolve, 100));
-			} catch (e) {
-				console.warn(e);
-			} finally {
-				setAppIsReady(true);
-			}
-		}
-
-		prepare();
+		setInitialized(true);
 	}, []);
 
 	useEffect(() => {
-		if (!initialized || !appIsReady) return;
-
-		const inProtectedGroup = segments[1] === "(protected)";
-
-		if (session && !inProtectedGroup) {
-			router.replace("/(app)/(protected)");
-		} else if (!session) {
-			router.replace("/(app)/welcome");
+		if (initialized) {
+			SplashScreen.hideAsync();
+			if (session) {
+				router.replace("/");
+			} else {
+				router.replace("/welcome");
+			}
 		}
-	}, [initialized, appIsReady, session]);
-
-	const onLayoutRootView = useCallback(async () => {
-		if (appIsReady) {
-			await SplashScreen.hideAsync();
-		}
-	}, [appIsReady]);
-
-	if (!initialized || !appIsReady) {
-		return null;
-	}
+	}, [initialized, session]);
 
 	return (
-		<SupabaseContext.Provider
+		<AuthContext.Provider
 			value={{
-				user,
-				session,
 				initialized,
+				session,
 				signUp,
-				signInWithPassword,
+				signIn,
 				signOut,
-				onLayoutRootView,
 			}}
 		>
 			{children}
-		</SupabaseContext.Provider>
+		</AuthContext.Provider>
 	);
-};
+}

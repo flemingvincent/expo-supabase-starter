@@ -4,7 +4,7 @@
 
 [shadcn/ui](https://ui.shadcn.com/) is a curated collection of beautifully designed components that can be effortlessly incorporated into your apps. This starter template draws heavy inspiration from this component library in terms of styling and component design philosophy.
 
-[react-native-reusables](https://github.com/mrzachnugent/react-native-reusables) are copy, paste, and tailor React Native components, inspired by Shadcn/ui, to suit your specific requirements.
+[react-native-reusables](https://rnr-docs.vercel.app/getting-started/introduction/) are copy, paste, and tailor React Native components, inspired by Shadcn/ui, to suit your specific requirements.
 
 ## Styling Solution
 

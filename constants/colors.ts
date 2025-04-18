@@ -35,7 +35,7 @@ export const colors = {
 		mutedForeground: "hsl(240, 5%, 64.9%)",
 		accent: "hsl(240, 3.7%, 15.9%)",
 		accentForeground: "hsl(0, 0%, 98%)",
-		destructive: "hsl(0, 72%, 51%)",
+		destructive: "hsl(0, 62.8%, 30.6%)",
 		destructiveForeground: "hsl(0, 0%, 98%)",
 		border: "hsl(240, 3.7%, 15.9%)",
 		input: "hsl(240, 3.7%, 15.9%)",
