@@ -12,6 +12,8 @@ web-build/
 
 .env
 
+ios/
+
 .cursorrules
 
 # macOS
