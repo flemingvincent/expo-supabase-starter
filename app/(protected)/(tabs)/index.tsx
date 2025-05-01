@@ -17,7 +17,7 @@ export default function Home() {
 				className="w-full"
 				variant="default"
 				size="default"
-				onPress={() => router.push("/(app)/modal")}
+				onPress={() => router.push("/(protected)/modal")}
 			>
 				<Text>Open Modal</Text>
 			</Button>

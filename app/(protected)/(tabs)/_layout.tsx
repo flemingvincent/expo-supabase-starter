@@ -1,10 +1,10 @@
-import { Tabs } from "expo-router";
 import React from "react";
+import { Tabs } from "expo-router";
 
-import { colors } from "@/constants/colors";
 import { useColorScheme } from "@/lib/useColorScheme";
+import { colors } from "@/constants/colors";
 
-export default function ProtectedLayout() {
+export default function TabsLayout() {
 	const { colorScheme } = useColorScheme();
 
 	return (
