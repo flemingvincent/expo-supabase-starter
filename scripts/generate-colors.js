@@ -28,6 +28,10 @@ const cssContent = fs.readFileSync(globalCssPath, "utf-8");
 const rootRegex = /:root\s*{([^}]*)}/;
 const darkRootRegex = /\.dark:root\s*{([^}]*)}/;
 
+// Helper function to convert kebab-case to camelCase
+const toCamelCase = (str) =>
+	str.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+
 const extractColors = (cssBlock) => {
 	const hslRegex = /--([\w-]+):\s*([\d.]+)\s+([\d.]+)%\s+([\d.]+)%;/g;
 	const colors = {};
@@ -36,7 +40,7 @@ const extractColors = (cssBlock) => {
 	while ((match = hslRegex.exec(cssBlock)) !== null) {
 		// eslint-disable-next-line no-unused-vars
 		const [_, name, h, s, l] = match;
-		colors[name] = `hsl(${h}, ${s}%, ${l}%)`;
+		colors[toCamelCase(name)] = `hsl(${h}, ${s}%, ${l}%)`;
 	}
 
 	return colors;
