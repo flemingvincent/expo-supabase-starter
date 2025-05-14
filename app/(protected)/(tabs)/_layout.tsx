@@ -1,5 +1,6 @@
 import React from "react";
 import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 import { useColorScheme } from "@/lib/useColorScheme";
 import { colors } from "@/constants/colors";
@@ -12,20 +13,67 @@ export default function TabsLayout() {
 			screenOptions={{
 				headerShown: false,
 				tabBarStyle: {
-					backgroundColor:
-						colorScheme === "dark"
-							? colors.dark.background
-							: colors.light.background,
+					backgroundColor: "white", // Always white background
+					borderTopWidth: 1,
+					borderTopColor: "#e5e5e5", // Optional: subtle border
+					paddingBottom: 15, // Increased bottom padding
+					paddingTop: 8,
+					height: 85, // Increased height to accommodate labels
 				},
-				tabBarActiveTintColor:
-					colorScheme === "dark"
-						? colors.dark.foreground
-						: colors.light.foreground,
-				tabBarShowLabel: false,
+				tabBarActiveTintColor: colors.light.primary || "#007AFF", // Active tab color
+				tabBarInactiveTintColor: "#8E8E93", // Inactive tab color
+				tabBarShowLabel: true, // Show labels
+				tabBarLabelStyle: {
+					fontSize: 11, // Small font size
+					marginTop: 4, // Space between icon and label
+				},
 			}}
 		>
-			<Tabs.Screen name="index" options={{ title: "Home" }} />
-			<Tabs.Screen name="settings" options={{ title: "Settings" }} />
+			<Tabs.Screen 
+				name="index" 
+				options={{ 
+					title: "Home",
+					tabBarIcon: ({ color, size }) => (
+						<Ionicons name="home" size={size} color={color} />
+					),
+				}} 
+			/>
+			<Tabs.Screen 
+				name="explore" 
+				options={{ 
+					title: "Explore",
+					tabBarIcon: ({ color, size }) => (
+						<Ionicons name="search" size={size} color={color} />
+					),
+				}} 
+			/>
+			<Tabs.Screen 
+				name="saved" 
+				options={{ 
+					title: "Favourites",
+					tabBarIcon: ({ color, size }) => (
+						<Ionicons name="heart" size={size} color={color} />
+					),
+				}} 
+			/>
+			<Tabs.Screen 
+				name="cart" 
+				options={{ 
+					title: "Cart",
+					tabBarIcon: ({ color, size }) => (
+						<Ionicons name="cart" size={size} color={color} />
+					),
+				}} 
+			/>
+			<Tabs.Screen 
+				name="profile" 
+				options={{ 
+					title: "Profile",
+					tabBarIcon: ({ color, size }) => (
+						<Ionicons name="person" size={size} color={color} />
+					),
+				}} 
+			/>
 		</Tabs>
 	);
 }

@@ -1,12 +1,23 @@
 {
   "expo": {
-    "name": "ExpoSupabaseStarter",
-    "slug": "ExpoSupabaseStarter",
-    "scheme": "expo-supabase-starter",
+    "name": "mealmate",
+    "slug": "mealmate",
+    "scheme": "mealmate",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/mm-homie-transparent-bg.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#E2F380",
+      "imageResizeMode": "contain"
+    },
+    "fonts": [
+      {
+        "asset": "./assets/fonts/BNDimeDisplay.otf"
+      }
+    ],
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -17,14 +28,9 @@
         "usesNonExemptEncryption": false
       },
       "splash": {
-        "image": "./assets/splash.png",
+        "image": "/assets/mm-homie-transparent-bg.png",
         "resizeMode": "cover",
-        "backgroundColor": "#ffffff",
-        "dark": {
-          "backgroundColor": "#000000",
-          "resizeMode": "cover",
-          "image": "./assets/splash-dark.png"
-        }
+        "backgroundColor": "#E2F380"
       },
       "icon": {
         "dark": "./assets/icon-dark.png",
@@ -37,14 +43,9 @@
         "foregroundImage": "./assets/adaptive-icon.png"
       },
       "splash": {
-        "image": "./assets/splash.png",
+        "image": "/assets/mm-homie-transparent-bg.png",
         "resizeMode": "cover",
-        "backgroundColor": "#ffffff",
-        "dark": {
-          "backgroundColor": "#000000",
-          "resizeMode": "cover",
-          "image": "./assets/splash-dark.png"
-        }
+        "backgroundColor": "#E2F380"
       }
     },
     "experiments": {
@@ -53,6 +54,13 @@
     "plugins": [
       "expo-router",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a26b3598-d37f-4b64-a79b-62309f2ed626"
+      }
+    },
+    "owner": "patricktheodore"
   }
 }

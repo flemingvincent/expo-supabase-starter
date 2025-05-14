@@ -3,47 +3,115 @@
 @tailwind utilities;
 
 @layer base {
-	:root {
-		--background: 0 0% 100%;
-		--foreground: 0 0% 14.50%;
-		--card: 0 0% 100%;
-		--card-foreground: 0 0% 14.50%;
-		--popover: 0 0% 100%;
-		--popover-foreground: 0 0% 14.50%;
-		--primary: 0 0% 20.50%;
-		--primary-foreground: 0 0% 98.50%;
-		--secondary: 0 0% 97%;
-		--secondary-foreground: 0 0% 20.50%;
-		--muted: 0 0% 97%;
-		--muted-foreground: 0 0% 55.60%;
-		--accent: 0 0% 97%;
-		--accent-foreground: 0 0% 20.50%;
-		--destructive: 0 80% 57.70%;
-		--destructive-foreground: 0 0% 100%;
-		--border: 0 0% 92.20%;
-		--input: 0 0% 92.20%;
-		--ring: 0 0% 70.80%;
+  :root {
+    /* Light mode colors */
+    --background: 0 0% 98%; /* #eeeeee */
+    --foreground: 117 51% 22%; /* #25551b - brand green text */
+    --card: 0 0% 100%;
+    --card-foreground: 117 51% 22%; /* #25551b */
+    --popover: 0 0% 100%;
+    --popover-foreground: 117 51% 22%; /* #25551b */
+    
+    --primary: 117 51% 22%; /* #25551b - primary brand green */
+    --primary-foreground: 0 0% 98.5%; /* White text for contrast */
+    
+    --secondary: 118 53% 15%; /* #193b12 - secondary brand green */
+    --secondary-foreground: 0 0% 98.5%; /* White text for contrast */
+    
+    --accent: 72 80% 73%; /* #E2F380 - brand green accent */
+    --accent-foreground: 117 51% 22%; /* #25551b */
+    
+    --muted: 47 100% 94%; /* #FFF7DC - brand cream */
+    --muted-foreground: 117 51% 22%; /* #25551b */
+    
+    --destructive: 0 70% 50%; /* Darker red that's more visible */
+    --destructive-foreground: 0 0% 98%; /* Light text on destructive */
+    
+    /* Add a new placeholder color */
+    --placeholder: 117 51% 22% / 0.4; /* Primary green with 40% opacity */
+    
+    --border: 117 51% 22% / 0.2; /* #25551b with transparency */
+    --input: 117 51% 22% / 0.2; /* #25551b with transparency */
+    --ring: 117 51% 22%; /* #25551b - primary brand green */
+  }
+
+  /* FOR MVP DARK IS GOING TO BE REPLICATED FROM LIGHT, CAN ADD DARK MODE SUPPORT LATER */
+  .dark:root {
+	/* Light mode colors */
+    --background: 0 0% 98%; /* #eeeeee */
+    --foreground: 117 51% 22%; /* #25551b - brand green text */
+    --card: 0 0% 100%;
+    --card-foreground: 117 51% 22%; /* #25551b */
+    --popover: 0 0% 100%;
+    --popover-foreground: 117 51% 22%; /* #25551b */
+    
+    --primary: 117 51% 22%; /* #25551b - primary brand green */
+    --primary-foreground: 0 0% 98.5%; /* White text for contrast */
+    
+    --secondary: 118 53% 15%; /* #193b12 - secondary brand green */
+    --secondary-foreground: 0 0% 98.5%; /* White text for contrast */
+    
+    --accent: 72 80% 73%; /* #E2F380 - brand green accent */
+    --accent-foreground: 117 51% 22%; /* #25551b */
+    
+    --muted: 47 100% 94%; /* #FFF7DC - brand cream */
+    --muted-foreground: 117 51% 22%; /* #25551b */
+    
+    --destructive: 0 70% 50%; /* Darker red that's more visible */
+    --destructive-foreground: 0 0% 98%; /* Light text on destructive */
+    
+    /* Add a new placeholder color */
+    --placeholder: 117 51% 22% / 0.4; /* Primary green with 40% opacity */
+    
+    --border: 117 51% 22% / 0.2; /* #25551b with transparency */
+    --input: 117 51% 22% / 0.2; /* #25551b with transparency */
+    --ring: 117 51% 22%; /* #25551b - primary brand green */
+	/* LIGHT MODE REPLICA */
+
+
+    /* Dark mode colors - with dark grey background and accent highlights */
+    /* --background: 240 10% 10%; /* Dark grey background instead of green */
+    /* --foreground: 0 0% 95%; /* Light grey/almost white text */
+    
+    /* --card: 240 10% 15%; /* Slightly lighter dark grey for cards */
+    /* --card-foreground: 0 0% 95%; /* Light text */
+    
+    /* --popover: 240 10% 15%; /* Match card background */
+    /* --popover-foreground: 0 0% 95%; /* Light text */
+    
+    /* Using accent color from light mode (lime green) as primary in dark mode */
+    /* --primary: 72 80% 73%; /* #E2F380 - brand green accent */
+    /* --primary-foreground: 240 10% 10%; /* Dark background color for contrast */
+    
+    /* Using cream as secondary */
+    /* --secondary: 47 100% 90%; /* Slightly dimmed cream color */
+    /* --secondary-foreground: 240 10% 10%; /* Dark grey */
+    
+    /* --muted: 240 5% 25%; /* Muted dark grey */
+    /* --muted-foreground: 0 0% 85%; /* Slightly dimmed text */
+    
+    /* Using the pink/tertiary color as accent in dark mode */
+    /* --accent: 359 100% 87%; /* #FFBDBE - brand tertiary/pink */
+    /* --accent-foreground: 240 10% 10%; /* Dark grey for contrast */
+    
+    /* More vibrant destructive for dark mode */
+    /* --destructive: 0 70% 60%; /* More vibrant red for destructive actions */
+    /* --destructive-foreground: 0 0% 95%; /* Light text */
+    
+    /* --border: 0 0% 30%; /* Subtle border */
+    /* --input: 0 0% 30%; /* Subtle input border */
+    /* --ring: 72 80% 73%; #E2F380 - brand green accent for focus rings */
+  }
+}
+
+@layer utilities {
+	.text-stroke-green {
+	  -webkit-text-stroke: 1.5px #25551b; /* Dark green stroke */
+	  color: #E2F380; /* Light green text */
 	}
 
-	.dark:root {
-		--background: 240 10% 3.90%;
-		--foreground: 0 0% 98%;
-		--card: 240 10% 3.90%;
-		--card-foreground: 0 0% 98%;
-		--popover: 240 10% 3.90%;
-		--popover-foreground: 0 0% 98%;
-		--primary: 0 0% 98%;
-		--primary-foreground: 240 5.90% 10%;
-		--secondary: 240 3.70% 15.90%;
-		--secondary-foreground: 0 0% 98%;
-		--muted: 240 3.70% 15.90%;
-		--muted-foreground: 240 5% 64.90%;
-		--accent: 240 3.70% 15.90%;
-		--accent-foreground: 0 0% 98%;
-		--destructive: 0 62.80% 30.60%;
-		--destructive-foreground: 0 85.70% 97.30%;
-		--border: 240 3.70% 15.90%;
-		--input: 240 3.70% 15.90%;
-		--ring: 240 4.90% 83.90%;
-	}
+  /* Custom placeholder color utility */
+  .placeholder::placeholder {
+    color: hsl(var(--placeholder));
+  }
 }
