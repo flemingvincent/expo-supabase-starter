@@ -8,6 +8,10 @@ module.exports = {
 		extend: {
 			fontFamily: {
 				brand: ['MMDisplay'],
+				'montserrat': ['Montserrat-Regular'],
+				'montserrat-medium': ['Montserrat-Medium'],
+				'montserrat-semibold': ['Montserrat-SemiBold'],
+				'montserrat-bold': ['Montserrat-Bold'],
 			},
 			colors: {
 				border: "hsl(var(--border))",
@@ -26,6 +30,15 @@ module.exports = {
 				destructive: {
 					DEFAULT: "hsl(var(--destructive))",
 					foreground: "hsl(var(--destructive-foreground))",
+				},
+				green: {
+					DEFAULT: "hsl(var(--brand-green))",
+				},
+				lightgreen: {
+					DEFAULT: "hsl(var(--brand-lightgreen))",
+				},
+				pink: {
+					DEFAULT: "hsl(var(--brand-pink))",
 				},
 				muted: {
 					DEFAULT: "hsl(var(--muted))",

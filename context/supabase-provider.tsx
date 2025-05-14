@@ -61,6 +61,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
 	const [fontsLoaded] = useFonts({
 		MMDisplay: require("../assets/fonts/BNDimeDisplay.otf"),
+		'Montserrat-Regular': require("../assets/fonts/Montserrat-Regular.ttf"),
+		'Montserrat-Medium': require("../assets/fonts/Montserrat-Medium.ttf"),
+		'Montserrat-SemiBold': require("../assets/fonts/Montserrat-SemiBold.ttf"),
+		'Montserrat-Bold': require("../assets/fonts/Montserrat-Bold.ttf"),
 	});
 
 	const fetchProfile = async (userId: string) => {

@@ -13,7 +13,9 @@ const buttonVariants = cva(
 				destructive: "bg-destructive web:hover:opacity-90 active:opacity-90",
 				outline:
 					"border border-input bg-background web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent",
-				secondary: "bg-secondary web:hover:opacity-80 active:opacity-80",
+				secondary: "bg-lightgreen border border-green web:hover:bg-opacity-90 active:bg-opacity-90 web:hover:border-green web:hover:shadow-lg web:transition-all web:duration-200",
+				// Enhanced funky button with better styling
+				funky: "bg-pink border border-green web:hover:bg-opacity-90 active:bg-opacity-90 web:hover:border-green web:hover:shadow-lg web:transition-all web:duration-200",
 				ghost:
 					"web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent",
 				link: "web:underline-offset-4 web:hover:underline web:focus:underline",
@@ -40,8 +42,9 @@ const buttonTextVariants = cva(
 				default: "text-primary-foreground",
 				destructive: "text-destructive-foreground",
 				outline: "group-active:text-accent-foreground",
-				secondary:
-					"text-secondary-foreground group-active:text-secondary-foreground",
+				secondary: "text-green font-semibold group-active:text-green web:transition-all",
+				// Fixed: Use the correct color mapping for funky button text
+				funky: "text-green font-semibold group-active:text-green web:transition-all",
 				ghost: "group-active:text-accent-foreground",
 				link: "text-primary group-active:underline",
 			},

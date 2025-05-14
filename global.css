@@ -17,6 +17,10 @@
     
     --secondary: 118 53% 15%; /* #193b12 - secondary brand green */
     --secondary-foreground: 0 0% 98.5%; /* White text for contrast */
+
+    --brand-pink: 359 100% 87%; /* #FFBDBE - brand tertiary/pink */
+    --brand-green: 117 51% 22%; /* #25551b - brand green */
+    --brand-lightgreen: 72 80% 73%; /* #E2F380 - brand green accent
     
     --accent: 72 80% 73%; /* #E2F380 - brand green accent */
     --accent-foreground: 117 51% 22%; /* #25551b */
@@ -50,6 +54,10 @@
     
     --secondary: 118 53% 15%; /* #193b12 - secondary brand green */
     --secondary-foreground: 0 0% 98.5%; /* White text for contrast */
+
+    /* FFBDBE */
+    --brand-pink: 359 100% 87%; /* #FFBDBE - brand tertiary/pink */
+    --brand-green: 117 51% 22%; /* #25551b - brand green */
     
     --accent: 72 80% 73%; /* #E2F380 - brand green accent */
     --accent-foreground: 117 51% 22%; /* #25551b */

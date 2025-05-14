@@ -12,7 +12,7 @@ const H1 = React.forwardRef<TextRef, SlottableTextProps>(
 				role="heading"
 				aria-level="1"
 				className={cn(
-					"web:scroll-m-20 text-4xl text-primary font-extrabold tracking-tight lg:text-5xl web:select-text text-stroke-green",
+					"web:scroll-m-20 text-4xl text-gray-900 font-extrabold tracking-tight lg:text-5xl web:select-text font-montserrat-bold",
 					className,
 				)}
 				ref={ref}
@@ -32,7 +32,7 @@ const H2 = React.forwardRef<TextRef, SlottableTextProps>(
 				role="heading"
 				aria-level="2"
 				className={cn(
-					"web:scroll-m-20 text-3xl text-primary font-semibold tracking-tight first:mt-0 web:select-text",
+					"web:scroll-m-20 text-3xl text-gray-900 font-semibold tracking-tight first:mt-0 web:select-text font-montserrat-semibold",
 					className,
 				)}
 				ref={ref}
@@ -52,7 +52,7 @@ const H3 = React.forwardRef<TextRef, SlottableTextProps>(
 				role="heading"
 				aria-level="3"
 				className={cn(
-					"web:scroll-m-20 text-2xl text-foreground font-semibold tracking-tight web:select-text",
+					"web:scroll-m-20 text-2xl text-gray-900 font-semibold tracking-tight web:select-text font-montserrat-semibold",
 					className,
 				)}
 				ref={ref}
@@ -72,7 +72,7 @@ const H4 = React.forwardRef<TextRef, SlottableTextProps>(
 				role="heading"
 				aria-level="4"
 				className={cn(
-					"web:scroll-m-20 text-xl text-foreground font-semibold tracking-tight web:select-text",
+					"web:scroll-m-20 text-xl text-gray-900 font-semibold tracking-tight web:select-text font-montserrat-semibold",
 					className,
 				)}
 				ref={ref}
@@ -89,7 +89,7 @@ const P = React.forwardRef<TextRef, SlottableTextProps>(
 		const Component = asChild ? Slot.Text : RNText;
 		return (
 			<Component
-				className={cn("text-base text-foreground web:select-text", className)}
+				className={cn("text-base text-gray-900 web:select-text font-montserrat", className)}
 				ref={ref}
 				{...props}
 			/>
@@ -107,7 +107,7 @@ const BlockQuote = React.forwardRef<TextRef, SlottableTextProps>(
 				// @ts-ignore - role of blockquote renders blockquote element on the web
 				role={Platform.OS === "web" ? "blockquote" : undefined}
 				className={cn(
-					"mt-6 native:mt-4 border-l-2 border-border pl-6 native:pl-3 text-base text-foreground italic web:select-text",
+					"mt-6 native:mt-4 border-l-2 border-border pl-6 native:pl-3 text-base text-gray-900 italic web:select-text font-montserrat",
 					className,
 				)}
 				ref={ref}
@@ -127,7 +127,7 @@ const Code = React.forwardRef<TextRef, SlottableTextProps>(
 				// @ts-ignore - role of code renders code element on the web
 				role={Platform.OS === "web" ? "code" : undefined}
 				className={cn(
-					"relative rounded-md bg-muted px-[0.3rem] py-[0.2rem] text-sm text-foreground font-semibold web:select-text",
+					"relative rounded-md bg-muted px-[0.3rem] py-[0.2rem] text-sm text-gray-900 font-semibold web:select-text font-montserrat-medium",
 					className,
 				)}
 				ref={ref}
@@ -145,7 +145,7 @@ const Lead = React.forwardRef<TextRef, SlottableTextProps>(
 		return (
 			<Component
 				className={cn(
-					"text-xl text-muted-foreground web:select-text",
+					"text-xl text-muted-foreground web:select-text font-montserrat",
 					className,
 				)}
 				ref={ref}
@@ -163,7 +163,7 @@ const Large = React.forwardRef<TextRef, SlottableTextProps>(
 		return (
 			<Component
 				className={cn(
-					"text-xl text-foreground font-semibold web:select-text",
+					"text-xl text-gray-900 font-semibold web:select-text font-montserrat-semibold",
 					className,
 				)}
 				ref={ref}
@@ -181,7 +181,7 @@ const Small = React.forwardRef<TextRef, SlottableTextProps>(
 		return (
 			<Component
 				className={cn(
-					"text-sm text-foreground font-medium leading-none web:select-text",
+					"text-sm text-gray-900 font-medium leading-none web:select-text font-montserrat-medium",
 					className,
 				)}
 				ref={ref}
@@ -199,7 +199,7 @@ const Muted = React.forwardRef<TextRef, SlottableTextProps>(
 		return (
 			<Component
 				className={cn(
-					"text-sm text-muted-foreground web:select-text",
+					"text-sm text-muted-foreground web:select-text font-montserrat",
 					className,
 				)}
 				ref={ref}
