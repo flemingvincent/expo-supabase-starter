@@ -56,6 +56,10 @@ export default function Profile() {
 					<View>
 						<Text>Email: {session?.user?.email}</Text>
 						<Text>Is Admin: {profile?.admin ? "Yes" : "No"}</Text>
+						<Text>Display name: {profile?.display_name}</Text>
+						<Text>Country: {profile?.country}</Text>
+						<Text>City: {profile?.city}</Text>
+						<Text>Post code: {profile?.post_code}</Text>
 						<Text>
 							Onboarding Complete:{" "}
 							{profile?.onboarding_completed ? "Yes" : "No"}
@@ -110,6 +114,15 @@ export default function Profile() {
 						</View>
 					</View>
 				</View>
+
+				{/* App Metadata (if available) */}
+				{user?.app_metadata && Object.keys(user.app_metadata).length > 0 && (
+					<View className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+						<H3 className="text-primary mb-4">User preferences</H3>
+						
+						
+					</View>
+				)}
 
 				{/* App Metadata (if available) */}
 				{user?.app_metadata && Object.keys(user.app_metadata).length > 0 && (

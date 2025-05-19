@@ -18,6 +18,9 @@ export interface UserProfile {
 	display_name: string;
 	onboarding_completed: boolean;
 	admin: boolean;
+	country: string;
+	city: string;
+	post_code: number;
 	created_at?: string;
 	updated_at?: string;
 }
