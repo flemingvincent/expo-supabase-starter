@@ -3,11 +3,15 @@ import {
 	TouchableOpacity,
 	KeyboardAvoidingView,
 	Platform,
+	Animated,
+	Dimensions,
 } from "react-native";
 import { router } from "expo-router";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useAuth } from "@/context/supabase-provider";
 import { Ionicons } from "@expo/vector-icons";
+import Svg, { Text as SvgText } from "react-native-svg";
+import { Image } from "@/components/image";
 
 import { Text } from "@/components/ui/text";
 import { supabase } from "@/config/supabase";
@@ -20,11 +24,210 @@ import GoalsStep from "@/components/onboarding/GoalsStep";
 import PreferencesStep from "@/components/onboarding/DietaryStep";
 import { useAppData } from "@/context/app-data-provider";
 
+const { width, height } = Dimensions.get('window');
+
+// Success Animation Component
+const SuccessAnimation = ({ visible, onComplete }: { visible: boolean; onComplete: () => void }) => {
+	const fadeAnim = useRef(new Animated.Value(0)).current;
+	const scaleAnim = useRef(new Animated.Value(0.9)).current;
+	const progressAnim = useRef(new Animated.Value(0)).current;
+	const [loadingText, setLoadingText] = useState("Analyzing your preferences...");
+	
+	// Add refs to prevent multiple executions
+	const animationStarted = useRef(false);
+	const onCompleteRef = useRef(onComplete);
+	const hasCompleted = useRef(false);
+
+	const appIcon = require("@/assets/mm-homie-transparent-bg.png");
+
+	const loadingMessages = [
+		"Analyzing your preferences...",
+		"Curating the perfect meal-kit for you...",
+		"Personalizing your experience...",
+		"Almost ready! Finalizing your setup..."
+	];
+
+	// Update the ref when onComplete changes
+	useEffect(() => {
+		onCompleteRef.current = onComplete;
+	}, [onComplete]);
+
+	useEffect(() => {
+		if (visible && !animationStarted.current) {
+			console.log("=== SuccessAnimation useEffect - starting for the FIRST time ===");
+			animationStarted.current = true;
+			
+			// Start animations
+			Animated.parallel([
+				// Fade in the whole screen
+				Animated.timing(fadeAnim, {
+					toValue: 1,
+					duration: 400,
+					useNativeDriver: true,
+				}),
+				// Scale up the logo slightly
+				Animated.spring(scaleAnim, {
+					toValue: 1,
+					tension: 50,
+					friction: 8,
+					useNativeDriver: true,
+				}),
+			]).start();
+
+			// Start progress bar animation - now 6 seconds total
+			console.log("=== Starting progress animation ===");
+			Animated.timing(progressAnim, {
+				toValue: 100,
+				duration: 5500, // 5.5 seconds to complete
+				useNativeDriver: false, // Width animations can't use native driver
+			}).start(() => {
+				console.log("=== Progress animation completed ===");
+				// Complete after progress bar finishes + small delay for 6 total seconds
+				setTimeout(() => {
+					if (!hasCompleted.current) {
+						console.log("=== Calling onComplete ===");
+						hasCompleted.current = true;
+						onCompleteRef.current();
+					}
+				}, 500); // 5500ms + 500ms = 6000ms total
+			});
+
+			// Update loading text at intervals
+			console.log("=== Setting up text interval ===");
+			const textInterval = setInterval(() => {
+				setLoadingText(prev => {
+					const currentIndex = loadingMessages.indexOf(prev);
+					const nextIndex = (currentIndex + 1) % loadingMessages.length;
+					return loadingMessages[nextIndex];
+				});
+			}, 1500); // Change text every 1.2 seconds
+
+			// Cleanup interval
+			return () => {
+				console.log("=== Cleaning up animation interval ===");
+				clearInterval(textInterval);
+			};
+		} else if (visible && animationStarted.current) {
+			console.log("=== SuccessAnimation useEffect - animation already started, ignoring ===");
+		}
+	}, [visible, fadeAnim, scaleAnim, progressAnim]);
+
+	if (!visible) return null;
+
+	console.log("=== SuccessAnimation rendering - visible:", visible);
+
+	return (
+		<Animated.View
+			style={{
+				position: 'absolute',
+				top: 0,
+				left: 0,
+				width,
+				height,
+				backgroundColor: '#E2F380', // Using accent color like welcome screen
+				justifyContent: 'center',
+				alignItems: 'center',
+				opacity: fadeAnim,
+				zIndex: 1000,
+				paddingHorizontal: 20,
+			}}
+		>
+			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+				<View style={{ marginBottom: 40 }}>
+					<Svg width="380" height="120" style={{ marginVertical: 10 }}>
+						<SvgText
+							x="190"
+							y="75"
+							textAnchor="middle"
+							fill="#25551b"
+							stroke="#E2F380"
+							strokeWidth="0"
+							letterSpacing="3"
+							fontFamily="MMDisplay"
+							fontSize="42"
+							fontWeight="bold"
+						>
+							MEALMATE
+						</SvgText>
+					</Svg>
+				</View>
+
+				{/* Logo */}
+				<Animated.View
+					style={{
+						transform: [{ scale: scaleAnim }],
+						marginBottom: 60,
+					}}
+				>
+					<Image
+						source={appIcon}
+						className="w-48 h-48 mx-auto"
+						contentFit="contain"
+					/>
+				</Animated.View>
+
+				{/* Loading bar */}
+				<View style={{ 
+					width: width * 0.85, // Use actual screen width instead of percentage
+					marginBottom: 30,
+					alignSelf: 'center' // Ensure it's centered
+				}}>
+					<View
+						style={{
+							height: 16,
+							backgroundColor: 'rgba(37, 85, 27, 0.3)',
+							borderRadius: 8,
+							overflow: 'hidden',
+							borderWidth: 2,
+							borderColor: '#25551B',
+							width: '100%', // Ensure it takes full width of parent
+						}}
+					>
+						<Animated.View
+							style={{
+								height: '100%',
+								backgroundColor: '#FF6B6B',
+								borderRadius: 6,
+								width: progressAnim.interpolate({
+									inputRange: [0, 100],
+									outputRange: ['0%', '100%'],
+								}),
+								shadowColor: '#FF6B6B',
+								shadowOffset: { width: 0, height: 0 },
+								shadowOpacity: 1,
+								shadowRadius: 6,
+								elevation: 5,
+							}}
+						/>
+					</View>
+				</View>
+
+				{/* Animated loading text */}
+				<Animated.View
+					style={{
+						opacity: fadeAnim,
+						transform: [{ translateY: fadeAnim.interpolate({
+							inputRange: [0, 1],
+							outputRange: [10, 0],
+						})}]
+					}}
+				>
+					<Text className="text-[#25551B] text-lg font-montserrat-medium text-center">
+						{loadingText}
+					</Text>
+				</Animated.View>
+			</View>
+		</Animated.View>
+	);
+};
+
 export default function OnboardingScreen() {
 	const { session, profile, updateProfile } = useAuth();
 	const { userPreferences } = useAppData();
 	const [currentStep, setCurrentStep] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
+	const [showSuccess, setShowSuccess] = useState(false);
+
 	const [formData, setFormData] = useState<FormData>({
 		name: profile?.display_name ?? "",
 		country: profile?.country ?? "",
@@ -53,6 +256,8 @@ export default function OnboardingScreen() {
 	const completeOnboarding = async () => {
 		try {
 			setIsLoading(true);
+			// Show success animation immediately
+			setShowSuccess(true);
 	
 			await updateProfile({
 				display_name: formData.name || undefined,
@@ -99,14 +304,19 @@ export default function OnboardingScreen() {
 	
 				if (insertError) throw insertError;
 			}
-	
-			// Navigate to home screen
-			router.replace("/");
 		} catch (error) {
 			console.error("Error completing onboarding:", error);
+			// On error, hide success animation and navigate
+			setShowSuccess(false);
+			router.replace("/");
 		} finally {
 			setIsLoading(false);
 		}
+	};
+
+	const handleSuccessComplete = () => {
+		// This is called when the success animation finishes
+		router.replace("/");
 	};
 
 	const handleNext = () => {
@@ -219,20 +429,31 @@ export default function OnboardingScreen() {
 	};
 
 	return (
-		<KeyboardAvoidingView
-			style={{ flex: 1 }}
-			behavior={Platform.OS === "ios" ? "padding" : "height"}
-			keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-		>
-			<View
-				className="flex-1 bg-background p-6"
-				style={{ backgroundColor: "#F1F3E4" }}
-			>
-				<View className="mt-16">
-					<ProgressIndicator />
-				</View>
-				<View className="flex-1">{renderCurrentStep()}</View>
-			</View>
-		</KeyboardAvoidingView>
+		<>
+			{/* Hide onboarding content when success animation is showing */}
+			{!showSuccess && (
+				<KeyboardAvoidingView
+					style={{ flex: 1 }}
+					behavior={Platform.OS === "ios" ? "padding" : "height"}
+					keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+				>
+					<View
+						className="flex-1 bg-background p-6"
+						style={{ backgroundColor: "#F1F3E4" }}
+					>
+						<View className="mt-16">
+							<ProgressIndicator />
+						</View>
+						<View className="flex-1">{renderCurrentStep()}</View>
+					</View>
+				</KeyboardAvoidingView>
+			)}
+
+			{/* Success Animation Overlay */}
+			<SuccessAnimation 
+				visible={showSuccess} 
+				onComplete={handleSuccessComplete}
+			/>
+		</>
 	);
 }
