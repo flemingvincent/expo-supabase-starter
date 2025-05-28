@@ -26,14 +26,13 @@ import { useAppData } from "@/context/app-data-provider";
 
 const { width, height } = Dimensions.get('window');
 
-// Success Animation Component
+// Success Animation Component (unchanged)
 const SuccessAnimation = ({ visible, onComplete }: { visible: boolean; onComplete: () => void }) => {
 	const fadeAnim = useRef(new Animated.Value(0)).current;
 	const scaleAnim = useRef(new Animated.Value(0.9)).current;
 	const progressAnim = useRef(new Animated.Value(0)).current;
 	const [loadingText, setLoadingText] = useState("Analyzing your preferences...");
 	
-	// Add refs to prevent multiple executions
 	const animationStarted = useRef(false);
 	const onCompleteRef = useRef(onComplete);
 	const hasCompleted = useRef(false);
@@ -47,25 +46,20 @@ const SuccessAnimation = ({ visible, onComplete }: { visible: boolean; onComplet
 		"Almost ready! Finalizing your setup..."
 	];
 
-	// Update the ref when onComplete changes
 	useEffect(() => {
 		onCompleteRef.current = onComplete;
 	}, [onComplete]);
 
 	useEffect(() => {
 		if (visible && !animationStarted.current) {
-			console.log("=== SuccessAnimation useEffect - starting for the FIRST time ===");
 			animationStarted.current = true;
 			
-			// Start animations
 			Animated.parallel([
-				// Fade in the whole screen
 				Animated.timing(fadeAnim, {
 					toValue: 1,
 					duration: 400,
 					useNativeDriver: true,
 				}),
-				// Scale up the logo slightly
 				Animated.spring(scaleAnim, {
 					toValue: 1,
 					tension: 50,
@@ -74,47 +68,34 @@ const SuccessAnimation = ({ visible, onComplete }: { visible: boolean; onComplet
 				}),
 			]).start();
 
-			// Start progress bar animation - now 6 seconds total
-			console.log("=== Starting progress animation ===");
 			Animated.timing(progressAnim, {
 				toValue: 100,
-				duration: 5500, // 5.5 seconds to complete
-				useNativeDriver: false, // Width animations can't use native driver
+				duration: 5500,
+				useNativeDriver: false,
 			}).start(() => {
-				console.log("=== Progress animation completed ===");
-				// Complete after progress bar finishes + small delay for 6 total seconds
 				setTimeout(() => {
 					if (!hasCompleted.current) {
-						console.log("=== Calling onComplete ===");
 						hasCompleted.current = true;
 						onCompleteRef.current();
 					}
-				}, 500); // 5500ms + 500ms = 6000ms total
+				}, 500);
 			});
 
-			// Update loading text at intervals
-			console.log("=== Setting up text interval ===");
 			const textInterval = setInterval(() => {
 				setLoadingText(prev => {
 					const currentIndex = loadingMessages.indexOf(prev);
 					const nextIndex = (currentIndex + 1) % loadingMessages.length;
 					return loadingMessages[nextIndex];
 				});
-			}, 1500); // Change text every 1.2 seconds
+			}, 1500);
 
-			// Cleanup interval
 			return () => {
-				console.log("=== Cleaning up animation interval ===");
 				clearInterval(textInterval);
 			};
-		} else if (visible && animationStarted.current) {
-			console.log("=== SuccessAnimation useEffect - animation already started, ignoring ===");
 		}
 	}, [visible, fadeAnim, scaleAnim, progressAnim]);
 
 	if (!visible) return null;
-
-	console.log("=== SuccessAnimation rendering - visible:", visible);
 
 	return (
 		<Animated.View
@@ -124,7 +105,7 @@ const SuccessAnimation = ({ visible, onComplete }: { visible: boolean; onComplet
 				left: 0,
 				width,
 				height,
-				backgroundColor: '#E2F380', // Using accent color like welcome screen
+				backgroundColor: '#E2F380',
 				justifyContent: 'center',
 				alignItems: 'center',
 				opacity: fadeAnim,
@@ -152,7 +133,6 @@ const SuccessAnimation = ({ visible, onComplete }: { visible: boolean; onComplet
 					</Svg>
 				</View>
 
-				{/* Logo */}
 				<Animated.View
 					style={{
 						transform: [{ scale: scaleAnim }],
@@ -166,11 +146,10 @@ const SuccessAnimation = ({ visible, onComplete }: { visible: boolean; onComplet
 					/>
 				</Animated.View>
 
-				{/* Loading bar */}
 				<View style={{ 
-					width: width * 0.85, // Use actual screen width instead of percentage
+					width: width * 0.85,
 					marginBottom: 30,
-					alignSelf: 'center' // Ensure it's centered
+					alignSelf: 'center'
 				}}>
 					<View
 						style={{
@@ -180,7 +159,7 @@ const SuccessAnimation = ({ visible, onComplete }: { visible: boolean; onComplet
 							overflow: 'hidden',
 							borderWidth: 2,
 							borderColor: '#25551B',
-							width: '100%', // Ensure it takes full width of parent
+							width: '100%',
 						}}
 					>
 						<Animated.View
@@ -202,7 +181,6 @@ const SuccessAnimation = ({ visible, onComplete }: { visible: boolean; onComplet
 					</View>
 				</View>
 
-				{/* Animated loading text */}
 				<Animated.View
 					style={{
 						opacity: fadeAnim,
@@ -227,6 +205,12 @@ export default function OnboardingScreen() {
 	const [currentStep, setCurrentStep] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
 	const [showSuccess, setShowSuccess] = useState(false);
+	const [isTransitioning, setIsTransitioning] = useState(false);
+	const [transitionDirection, setTransitionDirection] = useState<'forward' | 'backward'>('forward');
+
+	// Animation values for current and next step
+	const currentStepAnim = useRef(new Animated.Value(0)).current;
+	const nextStepAnim = useRef(new Animated.Value(width)).current;
 
 	const [formData, setFormData] = useState<FormData>({
 		name: profile?.display_name ?? "",
@@ -253,10 +237,53 @@ export default function OnboardingScreen() {
 		}));
 	}, []);
 
+	const animateToStep = useCallback((newStep: number, direction: 'forward' | 'backward') => {
+		if (isTransitioning || newStep === currentStep) return;
+
+		setIsTransitioning(true);
+		setTransitionDirection(direction);
+
+		// Set initial positions based on direction
+		if (direction === 'forward') {
+			// Current step will move left (negative), next step comes from right (positive)
+			currentStepAnim.setValue(0);
+			nextStepAnim.setValue(width);
+		} else {
+			// Current step will move right (positive), next step comes from left (negative)  
+			currentStepAnim.setValue(0);
+			nextStepAnim.setValue(-width);
+		}
+
+		// Animate both screens simultaneously
+		Animated.parallel([
+			Animated.timing(currentStepAnim, {
+				toValue: direction === 'forward' ? -width : width,
+				duration: 300,
+				useNativeDriver: true,
+			}),
+			Animated.timing(nextStepAnim, {
+				toValue: 0,
+				duration: 300,
+				useNativeDriver: true,
+			}),
+		]).start(() => {
+			// Update step first
+			setCurrentStep(newStep);
+			
+			// Use setTimeout to ensure React has fully completed its update cycle
+			setTimeout(() => {
+				// Double-check we're still in the right state before cleaning up
+				setIsTransitioning(false);
+				// Reset positions for next animation
+				currentStepAnim.setValue(0);
+				nextStepAnim.setValue(direction === 'forward' ? width : -width);
+			}, 50); // Small delay to ensure React reconciliation is complete
+		});
+	}, [currentStep, isTransitioning, currentStepAnim, nextStepAnim]);
+
 	const completeOnboarding = async () => {
 		try {
 			setIsLoading(true);
-			// Show success animation immediately
 			setShowSuccess(true);
 	
 			await updateProfile({
@@ -306,7 +333,6 @@ export default function OnboardingScreen() {
 			}
 		} catch (error) {
 			console.error("Error completing onboarding:", error);
-			// On error, hide success animation and navigate
 			setShowSuccess(false);
 			router.replace("/");
 		} finally {
@@ -315,7 +341,6 @@ export default function OnboardingScreen() {
 	};
 
 	const handleSuccessComplete = () => {
-		// This is called when the success animation finishes
 		router.replace("/");
 	};
 
@@ -323,19 +348,19 @@ export default function OnboardingScreen() {
 		if (currentStep === steps.length - 1) {
 			completeOnboarding();
 		} else {
-			setCurrentStep(currentStep + 1);
+			animateToStep(currentStep + 1, 'forward');
 		}
 	};
 
 	const handlePrevious = () => {
 		if (currentStep > 0) {
-			setCurrentStep(currentStep - 1);
+			animateToStep(currentStep - 1, 'backward');
 		}
 	};
 
 	const handleSkipStep = () => {
 		if (currentStep < steps.length - 1) {
-			setCurrentStep(currentStep + 1);
+			animateToStep(currentStep + 1, 'forward');
 		}
 	};
 
@@ -343,7 +368,7 @@ export default function OnboardingScreen() {
 		<View className="mb-8">
 			<View className="flex-row justify-between items-center mb-4">
 				{currentStep > 0 ? (
-					<TouchableOpacity onPress={handlePrevious}>
+					<TouchableOpacity onPress={handlePrevious} disabled={isTransitioning}>
 						<View className="flex-row items-center">
 							<Ionicons name="chevron-back" size={16} color="#374151" />
 							<Text className="text-gray-600 text-sm ml-1">Back</Text>
@@ -353,8 +378,8 @@ export default function OnboardingScreen() {
 					<View />
 				)}
 
-				{currentStep < steps.length && (
-					<TouchableOpacity onPress={handleSkipStep}>
+				{currentStep < steps.length - 1 && (
+					<TouchableOpacity onPress={handleSkipStep} disabled={isTransitioning}>
 						<View className="flex-row items-center">
 							<Text className="text-gray-600 text-sm mr-1">Skip</Text>
 							<Ionicons name="chevron-forward" size={16} color="#374151" />
@@ -385,8 +410,8 @@ export default function OnboardingScreen() {
 		</View>
 	);
 
-	const renderCurrentStep = () => {
-		switch (currentStep) {
+	const getStepComponent = (stepIndex: number) => {
+		switch (stepIndex) {
 			case 0:
 				return (
 					<DetailsStep
@@ -428,9 +453,16 @@ export default function OnboardingScreen() {
 		}
 	};
 
+	const getNextStep = () => {
+		if (transitionDirection === 'forward') {
+			return currentStep + 1;
+		} else {
+			return currentStep - 1;
+		}
+	};
+
 	return (
 		<>
-			{/* Hide onboarding content when success animation is showing */}
 			{!showSuccess && (
 				<KeyboardAvoidingView
 					style={{ flex: 1 }}
@@ -444,12 +476,39 @@ export default function OnboardingScreen() {
 						<View className="mt-16">
 							<ProgressIndicator />
 						</View>
-						<View className="flex-1">{renderCurrentStep()}</View>
+						
+						<View style={{ flex: 1, overflow: 'hidden' }}>
+							{/* Current Step */}
+							<Animated.View
+								style={{
+									position: 'absolute',
+									width: '100%',
+									height: '100%',
+									transform: [{ translateX: currentStepAnim }],
+								}}
+							>
+								{getStepComponent(currentStep)}
+							</Animated.View>
+
+							{/* Next Step (only visible during transition) */}
+							{isTransitioning && (
+								<Animated.View
+									style={{
+										position: 'absolute',
+										width: '100%',
+										height: '100%',
+										transform: [{ translateX: nextStepAnim }],
+										opacity: isTransitioning ? 1 : 0, // Extra safety
+									}}
+								>
+									{getStepComponent(getNextStep())}
+								</Animated.View>
+							)}
+						</View>
 					</View>
 				</KeyboardAvoidingView>
 			)}
 
-			{/* Success Animation Overlay */}
 			<SuccessAnimation 
 				visible={showSuccess} 
 				onComplete={handleSuccessComplete}

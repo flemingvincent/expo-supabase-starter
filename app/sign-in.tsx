@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, View, TouchableOpacity } from "react-native";
 import * as z from "zod";
 import Svg, { Text as SvgText } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormField, FormInput } from "@/components/ui/form";
 import { Text } from "@/components/ui/text";
 import { useAuth } from "@/context/supabase-provider";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 
 const formSchema = z.object({
 	email: z.string().email("Please enter a valid email address."),
@@ -121,15 +121,12 @@ export default function SignIn() {
 					</Button>
 				</View>
 
-				{/* "Don't have an account" section */}
+				{/* "Don't have an account" section - Using router.replace instead of Link */}
 				<View className="flex-row mt-6">
 					<Text className="text-primary">Don't have an account? </Text>
-					<Link
-						href="/sign-up"
-						asChild
-					>
+					<TouchableOpacity onPress={() => router.replace("/sign-up")}>
 						<Text className="text-primary font-bold">Sign Up</Text>
-					</Link>
+					</TouchableOpacity>
 				</View>
 			</View>
 		</SafeAreaView>
