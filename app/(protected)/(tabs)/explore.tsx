@@ -42,7 +42,6 @@ export default function Explore() {
 				.from('recipe')
 				.select('*')
 
-			console.log('Fetched recipes:', recipe);
 
 			if (error) {
 				console.error('Error fetching recipes:', error);

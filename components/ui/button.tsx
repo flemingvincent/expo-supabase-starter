@@ -5,14 +5,13 @@ import { cn } from "@/lib/utils";
 import { TextClassContext } from "@/components/ui/text";
 
 const buttonVariants = cva(
-	"group flex items-center justify-center rounded-full web:ring-offset-background web:transition-colors web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2",
+	"group flex items-center justify-center rounded-xl web:ring-offset-background web:transition-colors web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2",
 	{
 		variants: {
 			variant: {
 				default: "bg-lightgreen border-2 border-primary shadow-[4px_4px_0px_0px_#25551b] web:transition-all web:duration-300 active:shadow-[2px_2px_0px_0px_#25551b] active:translate-x-[2px] active:translate-y-[2px] web:hover:shadow-[2px_2px_0px_0px_#25551b] web:hover:translate-x-[2px] web:hover:translate-y-[2px]",
 				destructive: "bg-destructive web:hover:opacity-90 active:opacity-90",
-				outline:
-					"border border-input bg-background web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent",
+				outline: "border border-input bg-background web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent",
 				secondary: "bg-lightgreen border border-green web:hover:bg-opacity-90 active:bg-opacity-90 web:hover:border-green web:hover:shadow-lg web:transition-all web:duration-200",
 				funky: "bg-pink border-2 border-primary shadow-[4px_4px_0px_0px_#25551b] web:transition-all web:duration-300 active:shadow-[2px_2px_0px_0px_#25551b] active:translate-x-[2px] active:translate-y-[2px] web:hover:shadow-[2px_2px_0px_0px_#25551b] web:hover:translate-x-[2px] web:hover:translate-y-[2px]",
 				ghost:
