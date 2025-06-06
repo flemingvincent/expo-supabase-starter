@@ -15,6 +15,28 @@ export interface Tag {
 	created_at?: string;
 }
 
+export interface Ingredient {
+	id: string;
+	name: string;
+    unit_id?: string;
+	created_at?: string;
+}
+
+export interface Equipment {
+	id: string;
+	name: string;
+	created_at?: string;
+}
+
+export interface Unit {
+	id: string;
+	name: string;
+	abbreviation?: string;
+	category?: string;
+    to_base?: number;
+	created_at?: string;
+}
+
 export interface UserPreferences {
     id: string;
     user_id: string;
@@ -27,15 +49,25 @@ export interface UserPreferences {
 
 interface AppDataState {
 	tags: Tag[];
+	ingredients: Ingredient[];
+	equipment: Equipment[];
+	units: Unit[];
     userPreferences: UserPreferences;
     loading: boolean;
     error: Error | null;
 	refreshTags: () => Promise<void>;
+	refreshIngredients: () => Promise<void>;
+	refreshEquipment: () => Promise<void>;
+	refreshUnits: () => Promise<void>;
     refreshUserPreferences: () => Promise<void>;
+	refreshAll: () => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataState>({
 	tags: [],
+	ingredients: [],
+	equipment: [],
+	units: [],
     userPreferences: {
         id: "",
         user_id: "",
@@ -46,13 +78,20 @@ const AppDataContext = createContext<AppDataState>({
     loading: false,
     error: null,
 	refreshTags: async () => {},
+	refreshIngredients: async () => {},
+	refreshEquipment: async () => {},
+	refreshUnits: async () => {},
     refreshUserPreferences: async () => {},
+	refreshAll: async () => {},
 });
 
 export const useAppData = () => useContext(AppDataContext);
 
 export function AppDataProvider({ children }: PropsWithChildren) {
 	const [tags, setTags] = useState<Tag[]>([]);
+	const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+	const [equipment, setEquipment] = useState<Equipment[]>([]);
+	const [units, setUnits] = useState<Unit[]>([]);
     const [userPreferences, setUserPreferences] = useState<UserPreferences>({
         id: "",
         user_id: "",
@@ -65,7 +104,6 @@ export function AppDataProvider({ children }: PropsWithChildren) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const { session } = useAuth();
-    
 
 	const fetchTags = async () => {
 		try {
@@ -90,8 +128,89 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		}
 	};
 
+	const fetchIngredients = async () => {
+		try {
+			setLoading(true);
+			setError(null);
+
+			const { data, error } = await supabase
+				.from("ingredients")
+				.select("*")
+				.order("name");
+
+			if (error) {
+				throw new Error(error.message);
+			}
+
+			setIngredients(data || []);
+		} catch (error) {
+			console.error("Error fetching ingredients:", error);
+			setError(error instanceof Error ? error : new Error(String(error)));
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const fetchEquipment = async () => {
+		try {
+			setLoading(true);
+			setError(null);
+
+			const { data, error } = await supabase
+				.from("equipment")
+				.select("*")
+				.order("name");
+
+			if (error) {
+				throw new Error(error.message);
+			}
+
+			setEquipment(data || []);
+		} catch (error) {
+			console.error("Error fetching equipment:", error);
+			setError(error instanceof Error ? error : new Error(String(error)));
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const fetchUnits = async () => {
+		try {
+			setLoading(true);
+			setError(null);
+
+			const { data, error } = await supabase
+				.from("units")
+				.select("*")
+				.order("name");
+
+			if (error) {
+				throw new Error(error.message);
+			}
+
+			setUnits(data || []);
+		} catch (error) {
+			console.error("Error fetching units:", error);
+			setError(error instanceof Error ? error : new Error(String(error)));
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	const refreshTags = async () => {
 		await fetchTags();
+	};
+
+	const refreshIngredients = async () => {
+		await fetchIngredients();
+	};
+
+	const refreshEquipment = async () => {
+		await fetchEquipment();
+	};
+
+	const refreshUnits = async () => {
+		await fetchUnits();
 	};
 
     const fetchUserPreferences = async () => {
@@ -162,22 +281,49 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 
     const refreshUserPreferences = async () => {
         await fetchUserPreferences();
-    }
+    };
+
+	// Convenience method to refresh all reference data at once
+	const refreshAll = async () => {
+		try {
+			setLoading(true);
+			setError(null);
+			
+			await Promise.all([
+				fetchTags(),
+				fetchIngredients(),
+				fetchEquipment(),
+				fetchUnits(),
+				fetchUserPreferences(),
+			]);
+		} catch (error) {
+			console.error("Error refreshing all data:", error);
+			setError(error instanceof Error ? error : new Error(String(error)));
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	useEffect(() => {
-		fetchTags();
-        fetchUserPreferences();
+		refreshAll();
 	}, []);
 
 	return (
 		<AppDataContext.Provider
 			value={{
 				tags,
+				ingredients,
+				equipment,
+				units,
                 userPreferences,
 				loading,
 				error,
 				refreshTags,
+				refreshIngredients,
+				refreshEquipment,
+				refreshUnits,
                 refreshUserPreferences,
+				refreshAll,
 			}}
 		>
 			{children}

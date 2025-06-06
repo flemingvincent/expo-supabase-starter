@@ -4,6 +4,7 @@ import { ActivityIndicator, View, TouchableOpacity } from "react-native";
 import * as z from "zod";
 import Svg, { Text as SvgText } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 
 import { SafeAreaView } from "@/components/safe-area-view";
 import { Button } from "@/components/ui/button";
@@ -41,9 +42,26 @@ export default function SignIn() {
 		}
 	}
 
+	const handleBackPress = () => {
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+		router.replace("/welcome");
+	};
+
 	return (
-		<SafeAreaView className="flex-1 bg-accent p-4" edges={["bottom"]}>
-			<View className="flex-1 items-center justify-center web:m-4">
+		<SafeAreaView className="flex-1 bg-accent" edges={["top", "bottom"]}>
+			{/* Back arrow */}
+			<View className="flex-row justify-start p-4 pt-2">
+				<TouchableOpacity
+					onPress={handleBackPress}
+					className="p-2 -ml-2"
+					hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+				>
+					<Ionicons name="arrow-back" size={24} color="#25551b" />
+				</TouchableOpacity>
+			</View>
+
+			{/* Main content */}
+			<View className="flex-1 items-center justify-center px-4 -mt-16">
 				<Svg width="300" height="100" style={{ marginBottom: 20 }}>
 					<SvgText
 						x="150"

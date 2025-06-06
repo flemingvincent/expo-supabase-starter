@@ -170,7 +170,6 @@ export default function Profile() {
 					<Button
 						className="w-full"
 						size="default"
-						variant="secondary"
 						onPress={handleOnboarding}
 					>
 						<View className="flex-row items-center justify-center">

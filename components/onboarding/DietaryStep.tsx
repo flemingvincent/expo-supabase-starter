@@ -149,7 +149,7 @@ const PreferencesStep = ({
                     <Button
                         onPress={onNext}
                         className="w-full"
-                        variant={"funky"}
+                        variant={'funky'}
                         disabled={isLoading}
                     >
                         <View className="flex-row items-center justify-center">

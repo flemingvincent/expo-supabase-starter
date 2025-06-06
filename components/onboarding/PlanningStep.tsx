@@ -79,7 +79,7 @@ const PlanningStep = ({
 
                 {/* Continue Button */}
                 <View className="mt-8">
-                    <Button onPress={onNext} className="w-full" variant={"secondary"} disabled={isLoading}>
+                    <Button onPress={onNext} className="w-full" disabled={isLoading}>
                         <View className="flex-row items-center justify-center">
                             <Text className="mr-2 !text-xl font-montserrat-semibold">{isLoading ? "Saving..." : "Continue"}</Text>
                             <Ionicons name="arrow-forward" size={16} color="#25551b" />

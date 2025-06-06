@@ -142,7 +142,6 @@ const DetailsStep = ({
 					<Button
 						onPress={onNext}
 						className="w-full"
-						variant={"secondary"}
 						disabled={isLoading}
 					>
 						<View className="flex-row items-center justify-center">

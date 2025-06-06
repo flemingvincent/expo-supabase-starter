@@ -3,6 +3,7 @@ import { View, FlatList, Image, TouchableOpacity, ScrollView } from "react-nativ
 import { useState, useEffect } from "react";
 import { supabase } from "@/config/supabase";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
@@ -63,11 +64,13 @@ export default function Explore() {
 	}, []);
 
 	const handleFilterPress = () => {
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 		// TODO: Implement filter functionality
 		console.log('Filter pressed');
 	};
 
 	const handleSearchPress = () => {
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 		// TODO: Implement search functionality
 		console.log('Search pressed');
 	};
@@ -135,9 +138,8 @@ export default function Explore() {
 				elevation: 4, // For Android
 			}}
 			onPress={() => {
-				// Navigate to recipe detail page
-				// router.push(`/recipe/${recipe.id}`);
-				console.log('Recipe tapped:', recipe.name);
+				Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+				router.push(`/recipe/${recipe.id}`);
 			}}
 		>
 			<View 
@@ -189,6 +191,12 @@ export default function Explore() {
 					<TouchableOpacity 
 						className="p-2 rounded-full"
 						style={{ backgroundColor: '#E2F380' }}
+						onPress={(e) => {
+							e.stopPropagation(); // Prevent card tap
+							Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+							// TODO: Implement favorite functionality
+							console.log('Favorited:', recipe.name);
+						}}
 					>
 						<Ionicons name="heart-outline" size={14} color="#25551b" />
 					</TouchableOpacity>
@@ -209,7 +217,13 @@ export default function Explore() {
 				>
 					{category.title.toUpperCase()}
 				</Text>
-				<TouchableOpacity>
+				<TouchableOpacity
+					onPress={() => {
+						Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+						// TODO: Navigate to category view
+						console.log('View all for category:', category.title);
+					}}
+				>
 					<Text 
 						className="text-base font-medium"
 						style={{ color: '#25551b', opacity: 0.7 }}

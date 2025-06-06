@@ -55,6 +55,7 @@ export default function Home() {
 				<Text>Test Connection</Text>
 			</Button>
 
+
 			<Text className="text-xs text-muted-foreground">
 				Onboarding: {profile?.onboarding_completed ? "Complete" : "Incomplete"}
 			</Text>

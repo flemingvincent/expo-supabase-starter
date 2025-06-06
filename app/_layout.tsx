@@ -16,7 +16,7 @@ export default function AppLayout() {
 					<Stack.Screen
 						name="sign-up"
 						options={{
-							presentation: "fullScreenModal",
+							presentation: "card",
 							headerShown: false,
 							gestureEnabled: true,
 						}}
@@ -24,7 +24,7 @@ export default function AppLayout() {
 					<Stack.Screen
 						name="sign-in"
 						options={{
-							presentation: "fullScreenModal",
+							presentation: "card",
 							headerShown: false,
 							gestureEnabled: true,
 						}}

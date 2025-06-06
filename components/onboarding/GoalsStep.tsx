@@ -73,7 +73,6 @@ const GoalsStep = ({
                     <Button
                         onPress={onNext}
                         className="w-full"
-                        variant={"secondary"}
                         disabled={!formData.goalId || isLoading}
                     >
                         <View className="flex-row items-center justify-center">

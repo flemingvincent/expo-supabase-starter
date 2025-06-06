@@ -9,13 +9,12 @@ const buttonVariants = cva(
 	{
 		variants: {
 			variant: {
-				default: "bg-primary web:hover:opacity-90 active:opacity-90",
+				default: "bg-lightgreen border-2 border-primary shadow-[4px_4px_0px_0px_#25551b] web:transition-all web:duration-300 active:shadow-[2px_2px_0px_0px_#25551b] active:translate-x-[2px] active:translate-y-[2px] web:hover:shadow-[2px_2px_0px_0px_#25551b] web:hover:translate-x-[2px] web:hover:translate-y-[2px]",
 				destructive: "bg-destructive web:hover:opacity-90 active:opacity-90",
 				outline:
 					"border border-input bg-background web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent",
 				secondary: "bg-lightgreen border border-green web:hover:bg-opacity-90 active:bg-opacity-90 web:hover:border-green web:hover:shadow-lg web:transition-all web:duration-200",
-				// Enhanced funky button with better styling
-				funky: "bg-pink border border-green web:hover:bg-opacity-90 active:bg-opacity-90 web:hover:border-green web:hover:shadow-lg web:transition-all web:duration-200",
+				funky: "bg-pink border-2 border-primary shadow-[4px_4px_0px_0px_#25551b] web:transition-all web:duration-300 active:shadow-[2px_2px_0px_0px_#25551b] active:translate-x-[2px] active:translate-y-[2px] web:hover:shadow-[2px_2px_0px_0px_#25551b] web:hover:translate-x-[2px] web:hover:translate-y-[2px]",
 				ghost:
 					"web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent",
 				link: "web:underline-offset-4 web:hover:underline web:focus:underline",
@@ -39,12 +38,11 @@ const buttonTextVariants = cva(
 	{
 		variants: {
 			variant: {
-				default: "text-primary-foreground",
+				default: "text-primary font-bold tracking-wide uppercase group-active:text-primary web:transition-all",
+				funky: "text-primary font-bold tracking-wide uppercase group-active:text-primary web:transition-all",
 				destructive: "text-destructive-foreground",
 				outline: "group-active:text-accent-foreground",
 				secondary: "text-green font-semibold group-active:text-green web:transition-all",
-				// Fixed: Use the correct color mapping for funky button text
-				funky: "text-green font-semibold group-active:text-green web:transition-all",
 				ghost: "group-active:text-accent-foreground",
 				link: "text-primary group-active:underline",
 			},
