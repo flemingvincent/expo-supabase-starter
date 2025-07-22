@@ -5,6 +5,7 @@ export interface FormData {
     postcode: number;
     mealsPerWeek: number;
     servesPerMeal: number;
+    mealTypes: string[];
     goalId: string | null;
-    user_preference_tags: string[];
+    userPreferenceTags: string[];
 }

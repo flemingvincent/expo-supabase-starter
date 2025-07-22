@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { View, TouchableOpacity, ScrollView } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, TouchableOpacity, ScrollView, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Svg, { Text as SvgText } from "react-native-svg";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
-import { H1, H4 } from "@/components/ui/typography";
+import { SafeAreaView } from "@/components/safe-area-view";
+import { usePressAnimation } from "@/hooks/onPressAnimation";
 import { supabase } from "@/config/supabase";
 import { FormData } from "@/types/onboarding";
 import { useAppData } from "@/context/app-data-provider";
@@ -23,6 +25,63 @@ const PreferencesStep = ({
 }: PreferencesStepProps) => {
     const { tags } = useAppData();
     const [groupedTags, setGroupedTags] = useState<{[key: string]: any[]}>({});
+    
+    // Animation setup similar to other screens
+    const contentOpacity = useRef(new Animated.Value(0)).current;
+    const contentTranslateY = useRef(new Animated.Value(20)).current;
+    const buttonOpacity = useRef(new Animated.Value(0)).current;
+    const buttonTranslateY = useRef(new Animated.Value(20)).current;
+
+    // Press animation for button
+    const buttonPress = usePressAnimation({
+        hapticStyle: 'Medium',
+        pressDistance: 4,
+    });
+
+    // Press animation for tag selection
+    const tagPress = usePressAnimation({
+        hapticStyle: 'Light',
+        pressDistance: 1,
+    });
+
+    useEffect(() => {
+        // Content entrance animation
+        const contentTimer = setTimeout(() => {
+            Animated.parallel([
+                Animated.timing(contentOpacity, {
+                    toValue: 1,
+                    duration: 400,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(contentTranslateY, {
+                    toValue: 0,
+                    duration: 400,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+        }, 100);
+
+        // Button entrance animation
+        const buttonTimer = setTimeout(() => {
+            Animated.parallel([
+                Animated.timing(buttonOpacity, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(buttonTranslateY, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+        }, 300);
+
+        return () => {
+            clearTimeout(contentTimer);
+            clearTimeout(buttonTimer);
+        };
+    }, []);
     
     useEffect(() => {
         // Filter out goal tags and group remaining tags by their type
@@ -44,14 +103,14 @@ const PreferencesStep = ({
 
     const toggleTag = (tagId: string) => {
         let updatedPreferences;
-        if (formData.user_preference_tags.includes(tagId)) {
-            updatedPreferences = formData.user_preference_tags.filter(
+        if (formData.userPreferenceTags.includes(tagId)) {
+            updatedPreferences = formData.userPreferenceTags.filter(
                 id => id !== tagId
             );
         } else {
-            updatedPreferences = [...formData.user_preference_tags, tagId];
+            updatedPreferences = [...formData.userPreferenceTags, tagId];
         }
-        handleFormChange('user_preference_tags', updatedPreferences);
+        handleFormChange('userPreferenceTags', updatedPreferences);
     };
     
     // Helper function to get display name for tag types
@@ -86,82 +145,149 @@ const PreferencesStep = ({
     ];
 
     return (
-        <ScrollView
-            className="w-full"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: 120 }}
-        >
-            <View className="w-full">
-                <View className="mb-8">
-                    <H1 className="w-full text-left mb-3">Recipe Preferences</H1>
-                    <H4 className="w-full text-left text-gray-600 font-normal">
-                        Tell us your preferences to help us find the perfect recipes for you
-                    </H4>
-                </View>
+        <SafeAreaView className="flex-1 bg-lightgreen" edges={["top", "bottom"]}>
+            <View className="flex-1 px-4">
+                {/* Fixed Title Section */}
+                <Animated.View
+                    style={{
+                        opacity: contentOpacity,
+                        transform: [{ translateY: contentTranslateY }]
+                    }}
+                    className="items-center mt-8 mb-6"
+                >
+                    {/* SVG Title matching signup style */}
+                    <Svg width="380" height="60">
+                        <SvgText
+                            x="190"
+                            y="50"
+                            textAnchor="middle"
+                            fill="#25551b"
+                            stroke="#E2F380"
+                            strokeWidth="0"
+                            letterSpacing="2"
+                            fontFamily="MMDisplay"
+                            fontSize="28"
+                            fontWeight="bold"
+                        >
+                            PREFERENCES
+                        </SvgText>
+                    </Svg>
+                    <Text className="text-primary text-lg text-center px-4">
+                        Tell us your preferences to find perfect recipes
+                    </Text>
+                </Animated.View>
 
-                {tags.length < 1 ? (
-                    <View className="items-center justify-center py-8">
-                        <Text className="text-gray-600">Loading options...</Text>
-                    </View>
-                ) : (
-                    <View className="mb-8">
-                        {typeOrder.map(type => (
-                            groupedTags[type] && groupedTags[type].length > 0 && (
-                                <View key={type} className="mb-6">
-                                    <Text className="mb-2 text-[#25551B] font-montserrat-bold text-lg">
-                                        {getTypeDisplayName(type)}
-                                    </Text>
-                                    <View className="flex-row flex-wrap">
-                                        {groupedTags[type].map((tag) => (
-                                            <TouchableOpacity
-                                                key={tag.id}
-                                                onPress={() => toggleTag(tag.id)}
-                                                className={`px-4 py-2 m-1 rounded-full ${
-                                                    formData.user_preference_tags.includes(tag.id)
-                                                        ? "bg-[#E2F380]"
-                                                        : "bg-white"
-                                                }`}
-                                            >
-                                                <View className="flex-row items-center">
-                                                    <Text className="text-[#25551B] font-montserrat-medium">
-                                                        {tag.name}
-                                                    </Text>
+                {/* Scrollable Form Container */}
+                <Animated.View
+                    style={{
+                        opacity: contentOpacity,
+                        transform: [{ translateY: contentTranslateY }],
+                        flex: 1
+                    }}
+                    className="bg-background/80 rounded-2xl shadow-md mb-4"
+                >
+                    {tags.length < 1 ? (
+                        <View className="items-center justify-center flex-1">
+                            <Text className="text-primary/70">Loading options...</Text>
+                        </View>
+                    ) : (
+                        <ScrollView
+                            className="flex-1 p-6"
+                            showsVerticalScrollIndicator={true}
+                            contentContainerStyle={{ paddingBottom: 20 }}
+                        >
+                            {typeOrder.map(type => (
+                                groupedTags[type] && groupedTags[type].length > 0 && (
+                                    <View key={type} className="mb-6">
+                                        {/* Section Header */}
+                                        <Text className="text-primary text-base mb-3 ml-1 font-medium">
+                                            {getTypeDisplayName(type)}
+                                        </Text>
+                                        
+                                        {/* Tags Container */}
+                                        <View className="bg-white/50 rounded-xl p-4 border border-primary/10">
+                                            <View className="flex-row flex-wrap -m-1">
+                                                {groupedTags[type].map((tag) => (
+                                                    <TouchableOpacity
+                                                        key={tag.id}
+                                                        onPress={() => toggleTag(tag.id)}
+                                                        className={`px-3 py-2 m-1 rounded-full border ${
+                                                            formData.userPreferenceTags.includes(tag.id)
+                                                                ? "bg-primary border-primary"
+                                                                : "bg-white border-primary/30"
+                                                        }`}
+                                                        accessibilityRole="button"
+                                                        accessibilityLabel={`${formData.userPreferenceTags.includes(tag.id) ? 'Remove' : 'Add'} ${tag.name} preference`}
+                                                        accessibilityHint={`Toggle ${tag.name} as a preference`}
+                                                        accessibilityState={{ selected: formData.userPreferenceTags.includes(tag.id) }}
+                                                        {...tagPress}
+                                                    >
+                                                        <View className="flex-row items-center">
+                                                            <Text className={`font-medium text-sm ${
+                                                                formData.userPreferenceTags.includes(tag.id)
+                                                                    ? "text-white"
+                                                                    : "text-primary"
+                                                            }`}>
+                                                                {tag.name}
+                                                            </Text>
 
-                                                    {formData.user_preference_tags.includes(tag.id) && (
-                                                        <Ionicons
-                                                            name="checkmark"
-                                                            size={16}
-                                                            color="#25551B"
-                                                            className="ml-1"
-                                                        />
-                                                    )}
-                                                </View>
-                                            </TouchableOpacity>
-                                        ))}
+                                                            {formData.userPreferenceTags.includes(tag.id) && (
+                                                                <Ionicons
+                                                                    name="checkmark"
+                                                                    size={14}
+                                                                    color="#fff"
+                                                                    style={{ marginLeft: 4 }}
+                                                                />
+                                                            )}
+                                                        </View>
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </View>
+                                        </View>
                                     </View>
-                                </View>
-                            )
-                        ))}
-                    </View>
-                )}
+                                )
+                            ))}
+                        </ScrollView>
+                    )}
+                </Animated.View>
 
-                <View className="mt-8">
+                {/* Fixed Continue Button at bottom */}
+                <Animated.View
+                    style={{
+                        opacity: buttonOpacity,
+                        transform: [{ translateY: buttonTranslateY }]
+                    }}
+                    className="pb-4"
+                >
                     <Button
+                        size="lg"
+                        variant="secondary"
                         onPress={onNext}
-                        className="w-full"
-                        variant={'funky'}
                         disabled={isLoading}
+                        className="w-full"
+                        accessibilityRole="button"
+                        accessibilityLabel="Complete onboarding"
+                        accessibilityHint="Finish the onboarding process and start using the app"
+                        accessibilityState={{ 
+                            disabled: isLoading,
+                            busy: isLoading 
+                        }}
+                        {...buttonPress}
                     >
                         <View className="flex-row items-center justify-center">
-                            <Text className="mr-2 !text-xl font-montserrat-semibold">
+                            <Text className="text-white text-xl mr-2 font-semibold">
                                 {isLoading ? "Saving..." : "Let's get cooking"}
                             </Text>
-                            <Ionicons name="arrow-forward" size={16} color="#25551b" />
+                            <Ionicons
+                                name="arrow-forward"
+                                size={20}
+                                color="#fff"
+                            />
                         </View>
                     </Button>
-                </View>
+                </Animated.View>
             </View>
-        </ScrollView>
+        </SafeAreaView>
     );
 };
 

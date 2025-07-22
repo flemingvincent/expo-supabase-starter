@@ -5,35 +5,35 @@ import { cn } from "@/lib/utils";
 import { TextClassContext } from "@/components/ui/text";
 
 const buttonVariants = cva(
-	"group flex items-center justify-center rounded-xl web:ring-offset-background web:transition-colors web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2",
+	"group flex-row items-center justify-center rounded-2xl web:ring-offset-background web:transition-colors web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2",
 	{
 		variants: {
 			variant: {
-				default: "bg-lightgreen border-2 border-primary shadow-[4px_4px_0px_0px_#25551b] web:transition-all web:duration-300 active:shadow-[2px_2px_0px_0px_#25551b] active:translate-x-[2px] active:translate-y-[2px] web:hover:shadow-[2px_2px_0px_0px_#25551b] web:hover:translate-x-[2px] web:hover:translate-y-[2px]",
+				default: "bg-lightgreen border-2 text-primary border-primary shadow-[0px_4px_0px_0px_#25551b] web:transition-all web:duration-300 active:shadow-[0px_0px_0px_0px_#25551b] active:translate-y-[4px] web:hover:shadow-[0px_0px_0px_0px_#25551b] web:hover:translate-y-[4px]",
 				destructive: "bg-destructive web:hover:opacity-90 active:opacity-90",
 				outline: "border border-input bg-background web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent",
-				secondary: "bg-lightgreen border border-green web:hover:bg-opacity-90 active:bg-opacity-90 web:hover:border-green web:hover:shadow-lg web:transition-all web:duration-200",
+				secondary: "bg-primary border-2 text-white active:text-white border-primary web:transition-all web:duration-300 shadow-[0px_4px_0px_0px_#71830C] active:shadow-[0px_0px_0px_0px_#71830C] active:translate-y-[4px]",
 				funky: "bg-pink border-2 border-primary shadow-[4px_4px_0px_0px_#25551b] web:transition-all web:duration-300 active:shadow-[2px_2px_0px_0px_#25551b] active:translate-x-[2px] active:translate-y-[2px] web:hover:shadow-[2px_2px_0px_0px_#25551b] web:hover:translate-x-[2px] web:hover:translate-y-[2px]",
 				ghost:
 					"web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent",
 				link: "web:underline-offset-4 web:hover:underline web:focus:underline",
 			},
 			size: {
-				default: "h-10 px-4 py-2 native:h-12 native:px-5 native:py-3",
-				sm: "h-9 rounded-md px-3",
-				lg: "h-11 rounded-md px-8 native:h-14",
+				default: "h-11 px-8 native:h-14",
+				sm: "h-9 px-3",
+				lg: "h-11 px-8 native:h-14",
 				icon: "h-10 w-10",
 			},
 		},
 		defaultVariants: {
 			variant: "default",
-			size: "default",
+			size: "lg",
 		},
 	},
 );
 
 const buttonTextVariants = cva(
-	"web:whitespace-nowrap text-sm native:text-base font-medium text-foreground web:transition-colors",
+	"web:whitespace-nowrap text-sm native:text-base font-medium web:transition-colors",
 	{
 		variants: {
 			variant: {
@@ -41,7 +41,7 @@ const buttonTextVariants = cva(
 				funky: "text-primary font-bold tracking-wide uppercase group-active:text-primary web:transition-all",
 				destructive: "text-destructive-foreground",
 				outline: "group-active:text-accent-foreground",
-				secondary: "text-green font-semibold group-active:text-green web:transition-all",
+				secondary: "text-white font-semibold group-active:text-white web:transition-all",
 				ghost: "group-active:text-accent-foreground",
 				link: "text-primary group-active:underline",
 			},

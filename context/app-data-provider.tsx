@@ -43,6 +43,7 @@ export interface UserPreferences {
     goal_tag_id: string;
     meals_per_week: number;
     serves_per_meal: number;
+    meal_types: string[];
     user_preference_tags?: string[];
     created_at?: string;
 }
@@ -74,6 +75,7 @@ const AppDataContext = createContext<AppDataState>({
         goal_tag_id: "",
         meals_per_week: 1,
         serves_per_meal: 1,
+        meal_types: [],
     },
     loading: false,
     error: null,
@@ -99,6 +101,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
         meals_per_week: 1,
         serves_per_meal: 1,
         user_preference_tags: [],
+        meal_types: [],
         created_at: "",
     });
     const [loading, setLoading] = useState(false);
@@ -235,6 +238,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
                         meals_per_week: 1,
                         serves_per_meal: 1,
                         user_preference_tags: [],
+                        meal_types: [],
                     });
                     return;
                 }
@@ -269,6 +273,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
                     meals_per_week: 1,
                     serves_per_meal: 1,
                     user_preference_tags: [],
+                    meal_types: [],
                 });
             }
         } catch (error) {

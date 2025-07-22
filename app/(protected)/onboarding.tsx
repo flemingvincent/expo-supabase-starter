@@ -22,6 +22,8 @@ import DetailsStep from "@/components/onboarding/DetailsStep";
 import PlanningStep from "@/components/onboarding/PlanningStep";
 import GoalsStep from "@/components/onboarding/GoalsStep";
 import PreferencesStep from "@/components/onboarding/DietaryStep";
+import MealTypesStep from "@/components/onboarding/MealType";
+import WelcomeStep from "@/components/onboarding/WelcomeStep";
 import { useAppData } from "@/context/app-data-provider";
 
 const { width, height } = Dimensions.get('window');
@@ -105,7 +107,7 @@ const SuccessAnimation = ({ visible, onComplete }: { visible: boolean; onComplet
 				left: 0,
 				width,
 				height,
-				backgroundColor: '#E2F380',
+				backgroundColor: '#CCEA1F',
 				justifyContent: 'center',
 				alignItems: 'center',
 				opacity: fadeAnim,
@@ -205,12 +207,10 @@ export default function OnboardingScreen() {
 	const [currentStep, setCurrentStep] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
 	const [showSuccess, setShowSuccess] = useState(false);
-	const [isTransitioning, setIsTransitioning] = useState(false);
-	const [transitionDirection, setTransitionDirection] = useState<'forward' | 'backward'>('forward');
+	const [onboardingCompleted, setOnboardingCompleted] = useState(false);
 
-	// Animation values for current and next step
-	const currentStepAnim = useRef(new Animated.Value(0)).current;
-	const nextStepAnim = useRef(new Animated.Value(width)).current;
+	// Simple fade animation for step transitions
+	const stepOpacity = useRef(new Animated.Value(1)).current;
 
 	const [formData, setFormData] = useState<FormData>({
 		name: profile?.display_name ?? "",
@@ -220,14 +220,17 @@ export default function OnboardingScreen() {
 		mealsPerWeek: userPreferences?.meals_per_week ?? 1,
 		servesPerMeal: userPreferences?.serves_per_meal ?? 1,
 		goalId: userPreferences?.goal_tag_id ?? null,
-		user_preference_tags: userPreferences?.user_preference_tags ?? [],
+        mealTypes: userPreferences?.meal_types ?? [],
+		userPreferenceTags: userPreferences?.user_preference_tags ?? [],
 	});
 
 	const steps = [
 		"Details",
 		"Planning",
 		"Goals",
+        "Meal Types",
 		"Dietary Preferences",
+		"Welcome",
 	];
 
 	const handleFormChange = useCallback((field: keyof FormData, value: any) => {
@@ -237,49 +240,23 @@ export default function OnboardingScreen() {
 		}));
 	}, []);
 
-	const animateToStep = useCallback((newStep: number, direction: 'forward' | 'backward') => {
-		if (isTransitioning || newStep === currentStep) return;
+	// Simplified step transition with just a subtle fade
+	const transitionToStep = useCallback((newStep: number) => {
+		if (newStep === currentStep) return;
 
-		setIsTransitioning(true);
-		setTransitionDirection(direction);
-
-		// Set initial positions based on direction
-		if (direction === 'forward') {
-			// Current step will move left (negative), next step comes from right (positive)
-			currentStepAnim.setValue(0);
-			nextStepAnim.setValue(width);
-		} else {
-			// Current step will move right (positive), next step comes from left (negative)  
-			currentStepAnim.setValue(0);
-			nextStepAnim.setValue(-width);
-		}
-
-		// Animate both screens simultaneously
-		Animated.parallel([
-			Animated.timing(currentStepAnim, {
-				toValue: direction === 'forward' ? -width : width,
-				duration: 300,
-				useNativeDriver: true,
-			}),
-			Animated.timing(nextStepAnim, {
-				toValue: 0,
-				duration: 300,
-				useNativeDriver: true,
-			}),
-		]).start(() => {
-			// Update step first
+		Animated.timing(stepOpacity, {
+			toValue: 0,
+			duration: 150,
+			useNativeDriver: true,
+		}).start(() => {
 			setCurrentStep(newStep);
-			
-			// Use setTimeout to ensure React has fully completed its update cycle
-			setTimeout(() => {
-				// Double-check we're still in the right state before cleaning up
-				setIsTransitioning(false);
-				// Reset positions for next animation
-				currentStepAnim.setValue(0);
-				nextStepAnim.setValue(direction === 'forward' ? width : -width);
-			}, 50); // Small delay to ensure React reconciliation is complete
+			Animated.timing(stepOpacity, {
+				toValue: 1,
+				duration: 200,
+				useNativeDriver: true,
+			}).start();
 		});
-	}, [currentStep, isTransitioning, currentStepAnim, nextStepAnim]);
+	}, [currentStep, stepOpacity]);
 
 	const completeOnboarding = async () => {
 		try {
@@ -306,8 +283,10 @@ export default function OnboardingScreen() {
 	
 			if (prefError) throw prefError;
 	
+            // TODO: mealType handling
+
 			if (
-				formData.user_preference_tags.length > 0 &&
+				formData.userPreferenceTags.length > 0 &&
 				prefData &&
 				prefData.length > 0
 			) {
@@ -319,8 +298,8 @@ export default function OnboardingScreen() {
 					.eq("user_preference_id", preferenceId);
 	
 				if (deleteError) throw deleteError;
-	
-				const tagInserts = formData.user_preference_tags.map((tagId) => ({
+
+				const tagInserts = formData.userPreferenceTags.map((tagId) => ({
 					user_preference_id: preferenceId,
 					tag_id: tagId,
 				}));
@@ -331,6 +310,9 @@ export default function OnboardingScreen() {
 	
 				if (insertError) throw insertError;
 			}
+
+			// Mark onboarding as completed and show welcome step
+			setOnboardingCompleted(true);
 		} catch (error) {
 			console.error("Error completing onboarding:", error);
 			setShowSuccess(false);
@@ -341,74 +323,90 @@ export default function OnboardingScreen() {
 	};
 
 	const handleSuccessComplete = () => {
+		setShowSuccess(false);
+		transitionToStep(steps.length - 1);
+	};
+
+	const handleFinalComplete = () => {
 		router.replace("/");
 	};
 
 	const handleNext = () => {
-		if (currentStep === steps.length - 1) {
+		if (currentStep === steps.length - 2) { // Second to last step (Dietary Preferences)
 			completeOnboarding();
+		} else if (currentStep === steps.length - 1) { // Last step (Welcome)
+			handleFinalComplete();
 		} else {
-			animateToStep(currentStep + 1, 'forward');
+			transitionToStep(currentStep + 1);
 		}
 	};
 
 	const handlePrevious = () => {
 		if (currentStep > 0) {
-			animateToStep(currentStep - 1, 'backward');
+			// Don't allow going back from welcome step if onboarding is completed
+			if (currentStep === steps.length - 1 && onboardingCompleted) {
+				return;
+			}
+			transitionToStep(currentStep - 1);
 		}
 	};
 
 	const handleSkipStep = () => {
-		if (currentStep < steps.length - 1) {
-			animateToStep(currentStep + 1, 'forward');
+		if (currentStep < steps.length - 2) { // Can't skip the last two steps
+			transitionToStep(currentStep + 1);
 		}
 	};
 
-	const ProgressIndicator = () => (
-		<View className="mb-8">
-			<View className="flex-row justify-between items-center mb-4">
-				{currentStep > 0 ? (
-					<TouchableOpacity onPress={handlePrevious} disabled={isTransitioning}>
-						<View className="flex-row items-center">
-							<Ionicons name="chevron-back" size={16} color="#374151" />
-							<Text className="text-gray-600 text-sm ml-1">Back</Text>
-						</View>
-					</TouchableOpacity>
-				) : (
-					<View />
-				)}
+	const ProgressIndicator = () => {
+		// Don't show progress indicator on welcome step
+		if (currentStep === steps.length - 1) return null;
 
-				{currentStep < steps.length - 1 && (
-					<TouchableOpacity onPress={handleSkipStep} disabled={isTransitioning}>
-						<View className="flex-row items-center">
-							<Text className="text-gray-600 text-sm mr-1">Skip</Text>
-							<Ionicons name="chevron-forward" size={16} color="#374151" />
-						</View>
-					</TouchableOpacity>
-				)}
-			</View>
+		return (
+			<View className="mb-8">
+				<View className="flex-row justify-between items-center mb-4">
+					{currentStep > 0 ? (
+						<TouchableOpacity onPress={handlePrevious}>
+							<View className="flex-row items-center">
+								<Ionicons name="chevron-back" size={16} color="#374151" />
+								<Text className="text-gray-600 text-sm ml-1">Back</Text>
+							</View>
+						</TouchableOpacity>
+					) : (
+						<View />
+					)}
 
-			<View className="flex-row items-center">
-				<Text className="text-gray-600 text-sm font-medium mr-4">
-					{currentStep + 1}/{steps.length}
-				</Text>
+					{currentStep < steps.length - 2 && ( // Don't show skip on last two steps
+						<TouchableOpacity onPress={handleSkipStep}>
+							<View className="flex-row items-center">
+								<Text className="text-gray-600 text-sm mr-1">Skip</Text>
+								<Ionicons name="chevron-forward" size={16} color="#374151" />
+							</View>
+						</TouchableOpacity>
+					)}
+				</View>
 
-				<View className="flex-row flex-1 justify-between">
-					{steps.map((_, index) => (
-						<View
-							key={index}
-							className="flex-1 mx-1 h-2 rounded-full border"
-							style={{
-								backgroundColor: index <= currentStep ? "#FFBDBD" : "#C4C4C4",
-								borderColor: index <= currentStep ? "#25551B" : "#C4C4C4",
-								borderWidth: index <= currentStep ? 1 : 0,
-							}}
-						/>
-					))}
+				<View className="flex-row items-center">
+					<Text className="text-gray-600 text-sm font-medium mr-4">
+						{currentStep + 1}/{steps.length - 1} {/* Exclude welcome from count */}
+					</Text>
+
+					<View className="flex-row flex-1 justify-between">
+						{steps.slice(0, -1).map((_, index) => ( // Exclude welcome from progress dots
+							<View
+								key={index}
+								className="flex-1 mx-1 h-2 rounded-full border"
+								style={{
+									backgroundColor: index <= currentStep ? "#FFBDBD" : "#C4C4C4",
+									borderColor: index <= currentStep ? "#25551B" : "#C4C4C4",
+									borderWidth: index <= currentStep ? 1 : 0,
+								}}
+							/>
+						))}
+					</View>
 				</View>
 			</View>
-		</View>
-	);
+		);
+	};
 
 	const getStepComponent = (stepIndex: number) => {
 		switch (stepIndex) {
@@ -439,7 +437,16 @@ export default function OnboardingScreen() {
 						isLoading={isLoading}
 					/>
 				);
-			case 3:
+            case 3:
+                return (
+                    <MealTypesStep
+                        formData={formData}
+                        handleFormChange={handleFormChange}
+                        onNext={handleNext}
+                        isLoading={isLoading}
+                    />
+                );
+			case 4:
 				return (
 					<PreferencesStep
 						formData={formData}
@@ -448,16 +455,16 @@ export default function OnboardingScreen() {
 						isLoading={isLoading}
 					/>
 				);
+			case 5: // Welcome step
+				return (
+					<WelcomeStep
+						formData={formData}
+						onNext={handleNext}
+						isLoading={false}
+					/>
+				);
 			default:
 				return null;
-		}
-	};
-
-	const getNextStep = () => {
-		if (transitionDirection === 'forward') {
-			return currentStep + 1;
-		} else {
-			return currentStep - 1;
 		}
 	};
 
@@ -470,41 +477,22 @@ export default function OnboardingScreen() {
 					keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
 				>
 					<View
-						className="flex-1 bg-background p-6"
-						style={{ backgroundColor: "#F1F3E4" }}
+						className="flex-1 bg-lightgreen p-4"
+						style={{ backgroundColor: "#CCEA1F" }}
 					>
 						<View className="mt-16">
 							<ProgressIndicator />
 						</View>
 						
-						<View style={{ flex: 1, overflow: 'hidden' }}>
-							{/* Current Step */}
-							<Animated.View
-								style={{
-									position: 'absolute',
-									width: '100%',
-									height: '100%',
-									transform: [{ translateX: currentStepAnim }],
-								}}
-							>
-								{getStepComponent(currentStep)}
-							</Animated.View>
-
-							{/* Next Step (only visible during transition) */}
-							{isTransitioning && (
-								<Animated.View
-									style={{
-										position: 'absolute',
-										width: '100%',
-										height: '100%',
-										transform: [{ translateX: nextStepAnim }],
-										opacity: isTransitioning ? 1 : 0, // Extra safety
-									}}
-								>
-									{getStepComponent(getNextStep())}
-								</Animated.View>
-							)}
-						</View>
+						{/* Single animated container for current step */}
+						<Animated.View 
+							style={{ 
+								flex: 1,
+								opacity: stepOpacity 
+							}}
+						>
+							{getStepComponent(currentStep)}
+						</Animated.View>
 					</View>
 				</KeyboardAvoidingView>
 			)}

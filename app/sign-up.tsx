@@ -12,6 +12,7 @@ import { Form, FormField, FormInput } from "@/components/ui/form";
 import { Text } from "@/components/ui/text";
 import { useAuth } from "@/context/supabase-provider";
 import { useRouter } from "expo-router";
+import { usePressAnimation } from "@/hooks/onPressAnimation";
 
 const formSchema = z
 	.object({
@@ -44,6 +45,16 @@ export default function SignUp() {
 	const { signUp } = useAuth();
 	const router = useRouter();
 
+    const buttonPress = usePressAnimation({
+        hapticStyle: 'Medium',
+        pressDistance: 4,
+    });
+
+    const linkPress = usePressAnimation({
+        hapticStyle: 'Light',
+        pressDistance: 2,
+    });
+
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -68,13 +79,16 @@ export default function SignUp() {
 	};
 
 	return (
-		<SafeAreaView className="flex-1 bg-accent" edges={["top", "bottom"]}>
+		<SafeAreaView className="flex-1 bg-lightgreen" edges={["top", "bottom"]}>
 			{/* Back arrow */}
 			<View className="flex-row justify-start p-4 pt-2">
 				<TouchableOpacity
-					onPress={handleBackPress}
-					className="p-2 -ml-2"
-					hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    onPress={handleBackPress}
+                    className="p-2 -ml-2"
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Go back"
+                    accessibilityHint="Navigate back to welcome screen"
 				>
 					<Ionicons name="arrow-back" size={24} color="#25551b" />
 				</TouchableOpacity>
@@ -111,11 +125,14 @@ export default function SignUp() {
 									<FormInput
 										label="Email"
 										placeholder="your@email.com"
-										autoCapitalize="none"
+                                        autoCapitalize="none"
 										autoComplete="email"
-										autoCorrect={false}
-										keyboardType="email-address"
-										{...field}
+                                        autoCorrect={false}
+                                        keyboardType="email-address"
+                                        textContentType="emailAddress"
+                                        accessibilityLabel="Email address"
+                                        accessibilityHint="Enter your email address to create an account"
+                                        {...field}
 									/>
 								)}
 							/>
@@ -127,9 +144,14 @@ export default function SignUp() {
 										label="Password"
 										placeholder="••••••••"
 										autoCapitalize="none"
-										autoCorrect={false}
-										secureTextEntry
-										{...field}
+                                        autoCorrect={false}
+                                        secureTextEntry
+                                        autoComplete="new-password"
+                                        textContentType="newPassword"
+                                        accessibilityLabel="Password"
+                                        accessibilityHint="Create a password with at least 8 characters"
+                                        {...field}
+
 									/>
 								)}
 							/>
@@ -141,9 +163,13 @@ export default function SignUp() {
 										label="Confirm Password"
 										placeholder="Confirm password"
 										autoCapitalize="none"
-										autoCorrect={false}
-										secureTextEntry
-										{...field}
+                                        autoCorrect={false}
+                                        secureTextEntry
+                                        autoComplete="new-password"
+                                        textContentType="newPassword"
+                                        accessibilityLabel="Confirm password"
+                                        accessibilityHint="Re-enter your password to confirm"
+                                        {...field}
 									/>
 								)}
 							/>
@@ -158,21 +184,29 @@ export default function SignUp() {
 
 					{/* Sign up button with arrow */}
 					<Button
-						size="default"
-						variant="default"
-						onPress={form.handleSubmit(onSubmit)}
-						disabled={form.formState.isSubmitting}
-						className="mt-6"
+						size="lg"
+                        variant="default"
+                        onPress={form.handleSubmit(onSubmit)}
+                        disabled={form.formState.isSubmitting}
+                        className="mt-6"
+                        accessibilityRole="button"
+                        accessibilityLabel="Sign up"
+                        accessibilityHint="Create your account with the provided information"
+                        accessibilityState={{ 
+                            disabled: form.formState.isSubmitting,
+                            busy: form.formState.isSubmitting 
+                        }}
+                        {...buttonPress}
 					>
 						{form.formState.isSubmitting ? (
 							<ActivityIndicator size="small" color="#fff" />
 						) : (
 							<View className="flex-row items-center">
-								<Text className="text-primary-foreground">Sign Up</Text>
+								<Text className="text-primary">Sign Up</Text>
 								<Ionicons
 									name="arrow-forward"
 									size={16}
-									color="white"
+									color="#25551b"
 									style={{ marginLeft: 8 }}
 								/>
 							</View>
@@ -183,7 +217,13 @@ export default function SignUp() {
 				{/* "Already have an account" section - Using router.replace instead of Link */}
 				<View className="flex-row mt-6">
 					<Text className="text-primary">Already have an account? </Text>
-					<TouchableOpacity onPress={() => router.replace("/sign-in")}>
+					<TouchableOpacity 
+                        {...linkPress}
+                        onPress={() => router.replace("/sign-in")} 
+                        accessibilityRole="button"
+                        accessibilityLabel="Sign in"
+                        accessibilityHint="Navigate to sign in page if you already have an account"
+                    >
 						<Text className="text-primary font-bold">Sign In</Text>
 					</TouchableOpacity>
 				</View>
