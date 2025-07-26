@@ -5,13 +5,10 @@ import {
 	useEffect,
 	useState,
 } from "react";
-import { SplashScreen, useRouter } from "expo-router";
 
 import { Session } from "@supabase/supabase-js";
 
 import { supabase } from "@/config/supabase";
-
-SplashScreen.preventAutoHideAsync();
 
 type AuthState = {
 	initialized: boolean;
@@ -34,7 +31,6 @@ export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({ children }: PropsWithChildren) {
 	const [initialized, setInitialized] = useState(false);
 	const [session, setSession] = useState<Session | null>(null);
-	const router = useRouter();
 
 	const signUp = async (email: string, password: string) => {
 		const { data, error } = await supabase.auth.signUp({
@@ -96,18 +92,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
 		setInitialized(true);
 	}, []);
-
-	useEffect(() => {
-		if (initialized) {
-			SplashScreen.hideAsync();
-			if (session) {
-				router.replace("/");
-			} else {
-				router.replace("/welcome");
-			}
-		}
-		// eslint-disable-next-line
-	}, [initialized, session]);
 
 	return (
 		<AuthContext.Provider
