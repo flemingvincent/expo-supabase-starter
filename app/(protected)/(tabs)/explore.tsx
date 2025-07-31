@@ -1,37 +1,174 @@
 import { router } from "expo-router";
-import { View, FlatList, Image, TouchableOpacity, ScrollView } from "react-native";
-import { useState, useEffect } from "react";
+import { View, FlatList, TouchableOpacity, ScrollView, Animated, Dimensions } from "react-native";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/config/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-
+import { usePressAnimation } from "@/hooks/onPressAnimation";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { H1, H3, Muted } from "@/components/ui/typography";
+import { Recipe } from "@/types/recipe";
+import { SafeAreaView } from "@/components/safe-area-view";
+import { Image } from "@/components/image";
 
-interface Recipe {
-	id: string;
-	name: string;
-	description?: string;
-	prep_time?: number;
-	cook_time?: number;
-	total_time?: number;
-	default_servings?: number;
-	created_at?: string;
-	image_url?: string;
-	difficulty?: string;
-}
+// Smaller horizontal recipe card component
+const HorizontalRecipeCard = ({ recipe, colors }: { recipe: Recipe; colors: { text: string; background: string } }) => {
+	return (
+		<TouchableOpacity
+			style={{ backgroundColor: colors.background, width: 280 }}
+			className="p-4 rounded-xl mr-4"
+			accessibilityRole="button"
+			accessibilityLabel={`View ${recipe.name} recipe`}
+		>
+			<View>
+				<Text 
+					style={{ color: colors.text }}
+					className="text-lg font-semibold uppercase mb-2 leading-tight"
+				>
+					RECIPE
+				</Text>
 
-interface RecipeCategory {
-	id: string;
-	title: string;
-	recipes: Recipe[];
-}
+				<View 
+					style={{ backgroundColor: colors.text }}
+					className="aspect-[5/3] rounded-lg overflow-hidden mb-2"
+				>
+					<Image
+						source={typeof recipe.image_url === 'string' ? { uri: recipe.image_url } : recipe.image_url}
+						className="w-full h-full"
+						contentFit="cover"
+					/>
+				</View>
+
+				<Text className="text-background text-xl font-bold tracking-wide uppercase mb-2 leading-tight">
+					{recipe.name}
+				</Text>
+
+				<View className="flex-row justify-between items-center">
+					<View className="flex-row items-center gap-1">
+						<Ionicons name="star" size={16} color={colors.text} />
+						<Text 
+							style={{ color: colors.text }}
+							className="text-sm font-semibold"
+						>
+							{recipe.difficulty || "Easy"}
+						</Text>
+					</View>
+					<View className="flex-row items-center gap-1">
+						<Ionicons name="time-outline" size={16} color={colors.text} />
+						<Text 
+							style={{ color: colors.text }}
+							className="text-sm font-semibold"
+						>
+							{recipe.total_time} mins
+						</Text>
+					</View>
+				</View>
+			</View>
+		</TouchableOpacity>
+	);
+};
+
+const RecipeGroup = ({ title, recipes, colors, showAll = false }: { 
+	title: string; 
+	recipes: Recipe[]; 
+	colors: { text: string; background: string }; 
+	showAll?: boolean 
+}) => {
+	const displayRecipes = showAll ? recipes : recipes.slice(0, 8);
+	
+	return (
+		<View className="mb-8">
+			<View className="flex-row items-center justify-between mb-4 px-4">
+				<Text
+                    style={{ color: colors.text }}
+                    className="text-2xl font-bold tracking-wide uppercase">
+					{title}
+				</Text>
+                <TouchableOpacity>
+                    <Text 
+                        style={{ color: colors.text }}
+                        className="text-base font-semibold uppercase tracking-wide"
+                    >
+                        SEE ALL
+                    </Text>
+                </TouchableOpacity>
+			</View>
+			
+			<ScrollView 
+				horizontal 
+				showsHorizontalScrollIndicator={false}
+				contentContainerStyle={{ paddingHorizontal: 16, paddingRight: 32 }}
+				decelerationRate="fast"
+				snapToInterval={288}
+				snapToAlignment="start"
+			>
+				{displayRecipes.map((recipe: Recipe) => (
+					<HorizontalRecipeCard 
+						key={recipe.id} 
+						recipe={recipe} 
+						colors={colors}
+					/>
+				))}
+			</ScrollView>
+		</View>
+	);
+};
 
 export default function Explore() {
 	const [recipes, setRecipes] = useState<Recipe[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+
+    const contentOpacity = useRef(new Animated.Value(0)).current;
+	const contentTranslateY = useRef(new Animated.Value(20)).current;
+	const scrollY = useRef(new Animated.Value(0)).current;
+
+    const searchPress = usePressAnimation({
+		hapticStyle: 'Light',
+		pressDistance: 2,
+	});
+
+	const filterPress = usePressAnimation({
+		hapticStyle: 'Light',
+		pressDistance: 2,
+	});
+
+	const retryPress = usePressAnimation({
+		hapticStyle: 'Medium',
+		pressDistance: 4,
+	});
+
+	// Color schemes for different categories
+	const categoryColors = {
+		"Popular": { text: "#F88675", background: "#FFC2B9" },
+		"Quick & Easy": { text: "#FFB524", background: "#FFDF9E" },
+		"Healthy": { text: "#6B8E23", background: "#D3E4CD" },
+		"Comfort Food": { text: "#FF6525", background: "#FFA884" },
+		"Seafood": { text: "#54CDC3", background: "#BEF1ED" },
+		"Vegetarian": { text: "#4CAF50", background: "#A5D6A7" }
+	};
+
+    useEffect(() => {
+		const contentTimer = setTimeout(() => {
+			Animated.parallel([
+				Animated.timing(contentOpacity, {
+					toValue: 1,
+					duration: 400,
+					useNativeDriver: true,
+				}),
+				Animated.timing(contentTranslateY, {
+					toValue: 0,
+					duration: 400,
+					useNativeDriver: true,
+				}),
+			]).start();
+		}, 300);
+
+		return () => {
+			clearTimeout(contentTimer);
+		};
+	}, []);
 
 	const fetchRecipes = async () => {
 		try {
@@ -41,7 +178,6 @@ export default function Explore() {
 			let { data: recipe, error } = await supabase
 				.from('recipe')
 				.select('*')
-
 
 			if (error) {
 				console.error('Error fetching recipes:', error);
@@ -64,273 +200,201 @@ export default function Explore() {
 
 	const handleFilterPress = () => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-		// TODO: Implement filter functionality
 		console.log('Filter pressed');
 	};
 
 	const handleSearchPress = () => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-		// TODO: Implement search functionality
 		console.log('Search pressed');
 	};
 
-	// Create mock categories - in real app, this would come from your data
-	const createRecipeCategories = (recipes: Recipe[]): RecipeCategory[] => {
-		if (recipes.length === 0) return [];
-
-		// Mock categories - you can customize these based on your actual data structure
-		const categories: RecipeCategory[] = [
-			{
-				id: 'trending',
-				title: 'Trending Now',
-				recipes: recipes.slice(0, Math.ceil(recipes.length * 0.4))
-			},
-			{
-				id: 'quick',
-				title: 'Quick & Easy',
-				recipes: recipes.filter(r => (r.cook_time || 30) <= 30)
-			},
-			{
-				id: 'popular',
-				title: 'Most Popular',
-				recipes: recipes.slice(Math.ceil(recipes.length * 0.3))
-			},
-			{
-				id: 'recent',
-				title: 'Recently Added',
-				recipes: recipes.slice().reverse().slice(0, Math.ceil(recipes.length * 0.6))
-			}
-		];
-
-		// Filter out empty categories
-		return categories.filter(category => category.recipes.length > 0);
+	// Group recipes by category (mock grouping for demo)
+	const groupedRecipes = {
+		"Popular": recipes.slice(0, 6),
+		"Quick & Easy": recipes.filter(r => r.total_time != null && r.total_time <= 30),
+		"Healthy": recipes.slice(2, 8),
+		"Comfort Food": recipes.slice(1, 7),
+		"Seafood": recipes.slice(3, 9),
+		"Vegetarian": recipes.slice(0, 5)
 	};
 
-	// Generate random background colors for cards
-	const getRandomBackground = (recipeId: string) => {
-		const colors = [
-			'#FFF7DC', // Brand cream
-			'#F1F3E4', // Light background green
-			'#FFBDBE', // Brand pink
-			'#E2F380', // Brand light green
-			'#F5F7E8', // Very light green
-			'#FFEAEB', // Very light pink
-		];
-		
-		// Use recipe ID to ensure consistent color per recipe
-		const index = recipeId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
-		return colors[index];
-	};
-
-	const HorizontalRecipeCard = ({ recipe }: { recipe: Recipe }) => (
-		<TouchableOpacity 
-			className="mr-4 bg-white rounded-2xl overflow-hidden"
-			style={{ 
-				width: 200,
-				shadowColor: '#000',
-				shadowOffset: {
-					width: 0,
-					height: 2,
-				},
-				shadowOpacity: 0.1,
-				shadowRadius: 8,
-				elevation: 4, // For Android
-			}}
-			onPress={() => {
-				Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-				router.push(`/recipe/${recipe.id}`);
-			}}
-		>
-			<View 
-				className="w-full h-32 items-center justify-center overflow-hidden"
-				style={{ backgroundColor: getRandomBackground(recipe.id) }}
-			>
-				{recipe.image_url ? (
-					<Image
-						source={{ uri: recipe.image_url }}
-						className="w-full h-full"
-						resizeMode="contain"
-					/>
-				) : (
-					<Ionicons name="restaurant-outline" size={28} color="#25551b" style={{ opacity: 0.4 }} />
-				)}
-			</View>
-			
-			<View className="p-4">
-				<Text 
-					className="text-base font-bold mb-3"
-					style={{ 
-						fontFamily: 'Montserrat',
-						color: '#25551b'
-					}}
-					numberOfLines={2}
-				>
-					{recipe.name}
-				</Text>
-				
-				<View className="flex-row items-center justify-between">
-					<View className="flex-row items-center">
-						{recipe.cook_time && (
-							<View className="flex-row items-center mr-3">
-								<Ionicons name="time-outline" size={14} color="#25551b" style={{ opacity: 0.6 }} />
-								<Text className="text-sm text-gray-500 ml-1">
-									{recipe.cook_time}m
-								</Text>
-							</View>
-						)}
-						{/* Mock ingredients count - replace with actual data */}
-						<View className="flex-row items-center">
-							<Ionicons name="list-outline" size={14} color="#25551b" style={{ opacity: 0.6 }} />
-							<Text className="text-sm text-gray-500 ml-1">
-								{Math.floor(Math.random() * 8) + 5} ing
-							</Text>
-						</View>
-					</View>
-					
-					<TouchableOpacity 
-						className="p-2 rounded-full"
-						style={{ backgroundColor: '#E2F380' }}
-						onPress={(e) => {
-							e.stopPropagation(); // Prevent card tap
-							Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-							// TODO: Implement favorite functionality
-							console.log('Favorited:', recipe.name);
-						}}
-					>
-						<Ionicons name="heart-outline" size={14} color="#25551b" />
-					</TouchableOpacity>
-				</View>
-			</View>
-		</TouchableOpacity>
-	);
-
-	const CategorySection = ({ category }: { category: RecipeCategory }) => (
-		<View className="mb-10">
-			<View className="px-6 mb-3 flex-row items-center justify-between">
-				<Text 
-					className="text-xl font-bold"
-					style={{ 
-						fontFamily: 'montserrat',
-						color: '#25551b'
-					}}
-				>
-					{category.title.toUpperCase()}
-				</Text>
-				<TouchableOpacity
-					onPress={() => {
-						Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-						// TODO: Navigate to category view
-						console.log('View all for category:', category.title);
-					}}
-				>
-					<Text 
-						className="text-base font-medium"
-						style={{ color: '#25551b', opacity: 0.7 }}
-					>
-						View All →
-					</Text>
-				</TouchableOpacity>
-			</View>
-			
-			<FlatList
-				data={category.recipes}
-				renderItem={({ item }) => <HorizontalRecipeCard recipe={item} />}
-				keyExtractor={(item) => `${category.id}-${item.id}`}
-				horizontal
-				showsHorizontalScrollIndicator={false}
-				contentContainerStyle={{ paddingHorizontal: 24 }}
-				decelerationRate="fast"
-				snapToInterval={208} // Card width + margin
-				snapToAlignment="start"
-			/>
-		</View>
-	);
+	// Header animation based on scroll
+	const headerOpacity = scrollY.interpolate({
+		inputRange: [0, 100],
+		outputRange: [0, 1],
+		extrapolate: 'clamp',
+	});
 
 	if (loading) {
 		return (
-			<View className="flex-1 items-center justify-center bg-background p-4">
-				<Text>Loading recipes...</Text>
-			</View>
+			<SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+				<View className="flex-1 items-center justify-center p-4">
+					<View className="bg-[#FFB524] rounded-2xl p-8 items-center shadow-lg">
+						<Text className="text-background text-2xl font-bold tracking-wider uppercase mb-4">
+							LOADING
+						</Text>
+						<Text className="text-background/80 text-lg">Loading delicious recipes...</Text>
+					</View>
+				</View>
+			</SafeAreaView>
 		);
 	}
 
-	if (error) {
+    if (error) {
 		return (
-			<View className="flex-1 items-center justify-center bg-background p-4 gap-y-4">
-				<H1 className="text-center">Explore</H1>
-				<Text className="text-red-500 text-center">{error}</Text>
-				<Button onPress={fetchRecipes}>
-					<Text>Retry</Text>
-				</Button>
-			</View>
+			<SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+				<View className="flex-1 items-center justify-center p-4">
+					<View className="bg-[#FF6525] rounded-2xl p-8 items-center shadow-lg w-full max-w-sm">
+						<Text className="text-background text-2xl font-bold tracking-wider uppercase mb-6">
+							ERROR
+						</Text>
+						
+						<View className="items-center mb-6">
+							<Ionicons name="alert-circle-outline" size={48} color="#FFF" className="mb-3" />
+							<Text className="text-background/90 text-center text-base leading-relaxed">
+								{error}
+							</Text>
+						</View>
+
+						<Button 
+							onPress={fetchRecipes}
+							size="lg"
+							variant="default"
+							className="w-full bg-background"
+							{...retryPress}
+						>
+							<View className="flex-row items-center">
+								<Ionicons name="refresh" size={18} color="#FF6525" className="mr-2" />
+								<Text className="text-[#FF6525] text-lg font-semibold">Try Again</Text>
+							</View>
+						</Button>
+					</View>
+				</View>
+			</SafeAreaView>
 		);
 	}
-
-	const categories = createRecipeCategories(recipes);
 
 	return (
 		<View className="flex-1 bg-background">
-			{/* Modern Header with icons */}
-			<View className="px-6 pt-16 pb-6 bg-background border-b border-gray-200">
-				<View className="flex-row items-center justify-between">
-					<View className="flex-1">
-						<Text 
-							className="text-foreground text-3xl font-bold"
-							style={{ 
-								fontFamily: 'MMDisplay',
-								color: '#25551b',
-								letterSpacing: 0.5 
-							}}
-						>
-							EXPLORE
-						</Text>
+			{/* Floating Search Bar */}
+			<Animated.View 
+				style={{ opacity: headerOpacity }}
+				className="absolute top-0 left-0 right-0 z-10 px-4 pt-16 pb-4 bg-background/95 backdrop-blur-sm border-b border-gray-200"
+			>
+				<View className="flex-row items-center gap-3">
+					<View className="flex-1 bg-gray-100 rounded-full px-4 py-3 flex-row items-center">
+						<Ionicons name="search-outline" size={20} color="#666" className="mr-3" />
+						<Text className="text-gray-500 text-base flex-1">Search recipes...</Text>
 					</View>
 					
-					<View className="flex-row items-center gap-3">
-						<TouchableOpacity 
-							onPress={handleSearchPress}
-							className="p-3 rounded-full"
-							style={{ backgroundColor: '#E2F380' }}
-						>
-							<Ionicons 
-								name="search-outline" 
-								size={24} 
-								color="#25551b" 
-							/>
-						</TouchableOpacity>
-						
-						<TouchableOpacity 
-							onPress={handleFilterPress}
-							className="p-3 rounded-full"
-							style={{ backgroundColor: '#E2F380' }}
-						>
-							<Ionicons 
-								name="options-outline" 
-								size={24} 
-								color="#25551b" 
-							/>
-						</TouchableOpacity>
-					</View>
+					<TouchableOpacity 
+						onPress={handleFilterPress}
+						className="bg-[#FFB524] rounded-full p-3 shadow-sm"
+						accessibilityRole="button"
+						accessibilityLabel="Filter recipes"
+						{...filterPress}
+					>
+						<Ionicons name="options-outline" size={20} color="#FFF" />
+					</TouchableOpacity>
 				</View>
-			</View>
-			
-			{recipes.length === 0 ? (
-				<View className="flex-1 items-center justify-center p-6">
-					<Text className="text-gray-500 text-center text-lg">
-						No recipes found. Be the first to add one!
-					</Text>
+			</Animated.View>
+
+			<Animated.ScrollView 
+				className="flex-1"
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{ 
+					paddingTop: 60,
+				}}
+				onScroll={Animated.event(
+					[{ nativeEvent: { contentOffset: { y: scrollY } } }],
+					{ useNativeDriver: false }
+				)}
+				scrollEventThrottle={16}
+			>
+				{/* Header Section */}
+				<View className="px-4 mb-4 pt-6">
+					<TouchableOpacity 
+						onPress={handleSearchPress}
+						className="bg-pink rounded-2xl p-6 shadow-lg"
+						{...searchPress}
+					>
+						<View className="flex-row items-center justify-between">
+							<View className="flex-1">
+								<Text className="text-background text-xl font-bold tracking-wide uppercase mb-2">
+									FIND YOUR RECIPE
+								</Text>
+								<Text className="text-background/80 text-base">
+									Search by ingredient, cuisine, or dish name
+								</Text>
+							</View>
+							<View className="bg-background/20 rounded-full p-4">
+								<Ionicons name="search-outline" size={28} color="#FFF" />
+							</View>
+						</View>
+					</TouchableOpacity>
 				</View>
-			) : (
-				<ScrollView 
-					className="flex-1"
-					showsVerticalScrollIndicator={false}
-					contentContainerStyle={{ paddingTop: 16, paddingBottom: 20 }}
-				>
-					{categories.map((category) => (
-						<CategorySection key={category.id} category={category} />
-					))}
-				</ScrollView>
-			)}
+
+				{/* Quick Actions */}
+				<View className="flex-row gap-3 mb-8 px-4">
+					<TouchableOpacity 
+						onPress={handleFilterPress}
+						className="flex-1 bg-[#FFB524] rounded-xl p-4 flex-row items-center justify-center"
+						{...filterPress}
+					>
+						<Ionicons name="options-outline" size={20} color="#FFF" className="mr-2" />
+						<Text className="text-background font-semibold uppercase tracking-wide">
+							FILTERS
+						</Text>
+					</TouchableOpacity>
+					
+					<TouchableOpacity className="flex-1 bg-[#F88675] rounded-xl p-4 flex-row items-center justify-center">
+						<Ionicons name="heart-outline" size={20} color="#FFF" className="mr-2" />
+						<Text className="text-background font-semibold uppercase tracking-wide">
+							FAVORITES
+						</Text>
+					</TouchableOpacity>
+				</View>
+
+				{recipes.length > 0 && (
+					<Animated.View
+						style={{
+							opacity: contentOpacity,
+							transform: [{ translateY: contentTranslateY }],
+						}}
+					>
+						{Object.entries(groupedRecipes).map(([category, categoryRecipes]) => 
+							categoryRecipes.length > 0 && (
+								<RecipeGroup
+									key={category}
+									title={category}
+									recipes={categoryRecipes}
+									colors={categoryColors[category as keyof typeof categoryColors] || categoryColors["Popular"]}
+								/>
+							)
+						)}
+					</Animated.View>
+				)}
+
+				{!loading && !error && recipes.length === 0 && (
+					<Animated.View
+						style={{
+							opacity: contentOpacity,
+							transform: [{ translateY: contentTranslateY }],
+						}}
+						className="items-center justify-center p-4"
+					>
+						<View className="bg-[#F88675] rounded-2xl p-8 items-center shadow-lg mx-4">
+							<Ionicons name="restaurant-outline" size={48} color="#FFF" className="mb-4" />
+							<Text className="text-background text-xl font-bold tracking-wider uppercase mb-2 text-center">
+								No Recipes Found
+							</Text>
+							<Text className="text-background/80 text-center text-base leading-relaxed">
+								Check back soon for delicious new recipes!
+							</Text>
+						</View>
+					</Animated.View>
+				)}
+			</Animated.ScrollView>
 		</View>
 	);
 }

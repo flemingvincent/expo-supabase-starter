@@ -1,66 +1,65 @@
-import { View } from "react-native";
+import { View, ScrollView } from "react-native";
 import { useAuth } from "@/context/supabase-provider";
+import { useAppData } from "@/context/app-data-provider";
+import { SafeAreaView } from "@/components/safe-area-view";
 
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
-import { H1, Muted } from "@/components/ui/typography";
+import { Recipe } from "@/types/recipe";
+import { RecommendedMealsSection } from "@/components/home-screen/RecommendedMealsSection";
 import { supabase } from "@/config/supabase";
 
 export default function Home() {
 	const { profile, profileLoading } = useAuth();
+	const { userPreferences } = useAppData();
 
 	if (profileLoading) {
 		return (
-			<View className="flex-1 items-center justify-center bg-background">
-				<Text>Loading...</Text>
-			</View>
+			<SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+				<View className="flex-1 items-center justify-center">
+					<View className="bg-[#FFB524] rounded-2xl p-8 items-center shadow-lg">
+						<Text className="text-background text-2xl font-bold tracking-wider uppercase mb-4">
+							LOADING
+						</Text>
+						<Text className="text-background/80 text-lg">Getting your meal plan ready...</Text>
+					</View>
+				</View>
+			</SafeAreaView>
 		);
 	}
 
-	const testSupabaseConnection = async () => {
-		console.log("=== Testing Supabase Connection ===");
-		
-		try {
-		  // Test 1: Simple auth status check
-		  console.log("Test 1: Checking auth status...");
-		  const { data: session, error: sessionError } = await supabase.auth.getSession();
-		  console.log("Auth session:", { session, error: sessionError });
-		  
-		  // Test 2: Test a simple table query
-		  console.log("Test 2: Testing table query...");
-		  const { data, error, status, statusText } = await supabase
-			.from('profiles')
-			.select('id')
-			.limit(1);
-		  
-		  console.log("Query result:", { data, error, status, statusText });
-		  
-		  
-		} catch (error) {
-		  console.error("Connection test error:", error);
-		}
+	const handleMealPress = (meal: Recipe) => {
+		console.log("Meal pressed:", meal.name);
+		// TODO: Navigate to meal details
+	};
+
+	const handleSeeAllPress = () => {
+		console.log("See all pressed");
+		// TODO: Navigate to explore or full recommendations page
 	};
 
 	return (
-		<View className="flex-1 items-center justify-center bg-background p-4 gap-y-4">
-			<H1 className="text-center">Home</H1>
-			<Muted className="text-center">
-				You are now authenticated and this session will persist even after
-				closing the app.
+		<SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+			<ScrollView 
+				className="flex-1"
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{ paddingBottom: 20 }}
+			>
+				{/* Header Section */}
+				<View className="px-4 pb-4">
+					<Text className="text-gray-900 text-3xl font-bold tracking-wide font-montserrat-bold">
+						Hi {profile?.display_name || 'there'}!
+					</Text>
+				</View>
 
-				hot module xxxxww ww
-			</Muted>
-
-			<Button onPress={testSupabaseConnection}>
-				<Text>Test Connection</Text>
-			</Button>
-
-
-			<Text className="text-xs text-muted-foreground">
-				Onboarding: {profile?.onboarding_completed ? "Complete" : "Incomplete"}
-			</Text>
-
-			
-		</View>
+				{/* Recommended Meals Section */}
+				<RecommendedMealsSection
+					// mealsPerWeek={userPreferences?.meals_per_week ?? 3}
+                    mealsPerWeek={6} // Temporary hardcoded value
+					onMealPress={handleMealPress}
+					onSeeAllPress={handleSeeAllPress}
+				/>
+			</ScrollView>
+		</SafeAreaView>
 	);
 }
