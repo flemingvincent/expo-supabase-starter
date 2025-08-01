@@ -3,96 +3,124 @@ import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/ui/text";
 import { Image } from "@/components/image";
 import { Recipe } from "@/types/recipe";
+import { useAppData } from "@/context/app-data-provider";
+import { getRecipeColorScheme } from "@/lib/colors";
 
-interface MealCardProps {
-	recipe: Recipe;
-	colors: { text: string; background: string };
-	onPress?: () => void;
-	width?: number;
-	variant?: 'horizontal' | 'vertical';
+export interface RecipeWithTags extends Recipe {
+	tagIds?: string[];
 }
 
-export const MealCard = ({ 
-	recipe, 
-	colors, 
-	onPress, 
+interface MealCardProps {
+	recipe: RecipeWithTags;
+	onPress?: () => void;
+	width?: number;
+	variant?: "horizontal" | "vertical";
+}
+
+export const MealCard = ({
+	recipe,
+	onPress,
 	width = 280,
-	variant = 'horizontal'
+	variant = "horizontal",
 }: MealCardProps) => {
+	const { tags } = useAppData();
+	const colors = getRecipeColorScheme(recipe.tagIds, tags);
+
 	return (
 		<TouchableOpacity
-			style={{ backgroundColor: colors.background, width }}
-			className="p-4 rounded-xl mr-4"
 			onPress={onPress}
 			accessibilityRole="button"
 			accessibilityLabel={`View ${recipe.name} meal`}
 			activeOpacity={0.7}
+			style={{
+				width,
+			}}
+			className="mr-4"
 		>
-			<View className="min-h-[280px] flex-1 justify-between">
-				{/* Top section */}
-				<View>
-					<Text 
-						style={{ color: colors.text }}
-						className="text-xl font-montserrat-semibold uppercase mb-2 leading-tight"
-					>
-						MEAL
-					</Text>
+			<View
+				style={{
+					backgroundColor: colors.background,
+					borderColor: colors.text,
+					shadowColor: colors.text,
+					height: 380,
+				}}
+				className="border-2 rounded-2xl p-6 justify-between"
+				pointerEvents="none" // This is the key fix!
+			>
+				{/* Top content section */}
+				<View pointerEvents="none">
+					{/* Header section */}
+					<View className="mb-4" pointerEvents="none">
+						<Text
+							style={{ color: colors.text }}
+							className="text-md font-montserrat-bold tracking-wide uppercase"
+						>
+							MEAL RECOMMENDATION
+						</Text>
+					</View>
 
-					<View 
+					{/* Image section */}
+					<View
 						style={{ backgroundColor: colors.text }}
-						className={`${variant === 'horizontal' ? 'aspect-[4/3]' : 'aspect-square'} rounded-lg overflow-hidden mb-3`}
+						className={`${variant === "horizontal" ? "aspect-[4/3]" : "aspect-square"} w-full rounded-xl overflow-hidden mb-4 mx-auto`}
+						pointerEvents="none"
 					>
 						<Image
-							source={typeof recipe.image_url === 'string' ? { uri: recipe.image_url } : recipe.image_url}
+							source={
+								typeof recipe.image_url === "string"
+									? { uri: recipe.image_url }
+									: recipe.image_url
+							}
 							className="w-full h-full"
 							contentFit="cover"
 						/>
 					</View>
 
-					<Text 
-						className="text-background text-2xl font-montserrat-bold tracking-wide uppercase leading-tight"
+					{/* Title section */}
+					<Text
+						style={{ color: colors.text }}
+						className="text-2xl font-montserrat-bold tracking-wide uppercase leading-tight"
 						numberOfLines={3}
-						style={{ lineHeight: 28 }}
 					>
 						{recipe.name}
 					</Text>
 				</View>
 
-				{/* Bottom section - always pinned to bottom */}
-				<View className="flex-row justify-between items-end mt-3">
-					<View className="flex-row items-center gap-1">
-						<Ionicons name="star" size={20} color={colors.text} />
-						<Text 
+				{/* Info badges - always at bottom */}
+				<View className="flex-row justify-between items-center" pointerEvents="none">
+					<View
+						style={{
+							backgroundColor: colors.text + "20",
+							borderColor: colors.text,
+						}}
+						className="flex-row items-center gap-2 px-3 py-2 border rounded-xl"
+					>
+						<Ionicons name="star" size={16} color={colors.text} />
+						<Text
 							style={{ color: colors.text }}
-							className="text-lg font-montserrat-semibold"
+							className="font-montserrat-bold tracking-wide uppercase"
 						>
 							{recipe.difficulty || "Easy"}
 						</Text>
 					</View>
-					<View className="flex-row items-center gap-1">
-						<Ionicons name="time-outline" size={20} color={colors.text} />
-						<Text 
+
+					<View
+						style={{
+							backgroundColor: colors.text + "20",
+							borderColor: colors.text,
+						}}
+						className="flex-row items-center gap-2 px-3 py-2 border rounded-xl"
+					>
+						<Ionicons name="time-outline" size={16} color={colors.text} />
+						<Text
 							style={{ color: colors.text }}
-							className="text-lg font-montserrat-semibold"
+							className="font-montserrat-bold tracking-wide uppercase"
 						>
-							{recipe.total_time} mins
+							{recipe.total_time}M
 						</Text>
 					</View>
 				</View>
 			</View>
-
-				{/* Additional meal-specific info */}
-				{/* {recipe.serves && (
-					<View className="flex-row items-center gap-1 mt-2">
-						<Ionicons name="people-outline" size={16} color={colors.text} />
-						<Text 
-							style={{ color: colors.text }}
-							className="text-sm font-montserrat-semibold"
-						>
-							Serves {recipe.serves}
-						</Text>
-					</View>
-				)} */}
 		</TouchableOpacity>
 	);
 };

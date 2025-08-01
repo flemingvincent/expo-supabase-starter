@@ -9,14 +9,13 @@ const buttonVariants = cva(
 	{
 		variants: {
 			variant: {
-				default: "bg-lightgreen border-2 text-primary border-primary shadow-[0px_4px_0px_0px_#25551b] web:transition-all web:duration-300 active:shadow-[0px_0px_0px_0px_#25551b] active:translate-y-[4px] web:hover:shadow-[0px_0px_0px_0px_#25551b] web:hover:translate-y-[4px]",
-				destructive: "bg-destructive web:hover:opacity-90 active:opacity-90",
-				outline: "border border-input bg-background web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent",
-				secondary: "bg-primary border-2 text-white active:text-white border-primary web:transition-all web:duration-300 shadow-[0px_4px_0px_0px_#71830C] active:shadow-[0px_0px_0px_0px_#71830C] active:translate-y-[4px]",
-				funky: "bg-pink border-2 border-primary shadow-[4px_4px_0px_0px_#25551b] web:transition-all web:duration-300 active:shadow-[2px_2px_0px_0px_#25551b] active:translate-x-[2px] active:translate-y-[2px] web:hover:shadow-[2px_2px_0px_0px_#25551b] web:hover:translate-x-[2px] web:hover:translate-y-[2px]",
-				ghost:
-					"web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent",
-				link: "web:underline-offset-4 web:hover:underline web:focus:underline",
+				default: "bg-lightgreen border-2 border-primary shadow-[0px_4px_0px_0px_#25551b] web:transition-all web:duration-300 active:shadow-[0px_0px_0px_0px_#25551b] active:translate-y-[4px] web:hover:shadow-[0px_0px_0px_0px_#25551b] web:hover:translate-y-[4px]",
+				destructive: "bg-destructive border-2 border-destructive shadow-[0px_4px_0px_0px_rgba(239,68,68,0.8)] web:transition-all web:duration-300 active:shadow-[0px_0px_0px_0px_rgba(239,68,68,0.8)] active:translate-y-[4px] web:hover:opacity-90 active:opacity-90",
+				outline: "border-2 border-input bg-background shadow-[0px_4px_0px_0px_rgba(0,0,0,0.1)] web:transition-all web:duration-300 active:shadow-[0px_0px_0px_0px_rgba(0,0,0,0.1)] active:translate-y-[4px] web:hover:bg-accent web:hover:text-accent-foreground",
+				secondary: "bg-primary border-2 border-primary shadow-[0px_4px_0px_0px_#71830C] web:transition-all web:duration-300 active:shadow-[0px_0px_0px_0px_#71830C] active:translate-y-[4px] web:hover:shadow-[0px_0px_0px_0px_#71830C] web:hover:translate-y-[4px]",
+				funky: "bg-pink border-2 border-primary shadow-[0px_4px_0px_0px_#25551b] web:transition-all web:duration-300 active:shadow-[0px_0px_0px_0px_#25551b] active:translate-y-[4px] web:hover:shadow-[0px_0px_0px_0px_#25551b] web:hover:translate-y-[4px]",
+				ghost: "border-2 border-transparent shadow-[0px_4px_0px_0px_transparent] web:transition-all web:duration-300 active:shadow-[0px_0px_0px_0px_transparent] active:translate-y-[4px] web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent",
+				link: "border-2 border-transparent shadow-[0px_4px_0px_0px_transparent] web:underline-offset-4 web:hover:underline web:focus:underline",
 			},
 			size: {
 				default: "h-11 px-8 native:h-14",
@@ -33,21 +32,21 @@ const buttonVariants = cva(
 );
 
 const buttonTextVariants = cva(
-	"web:whitespace-nowrap text-sm native:text-base font-medium web:transition-colors",
+	"web:whitespace-nowrap text-sm native:text-base font-medium web:transition-colors web:pointer-events-none",
 	{
 		variants: {
 			variant: {
-				default: "text-primary font-bold tracking-wide uppercase group-active:text-primary web:transition-all",
-				funky: "text-primary font-bold tracking-wide uppercase group-active:text-primary web:transition-all",
-				destructive: "text-destructive-foreground",
-				outline: "group-active:text-accent-foreground",
-				secondary: "text-white font-semibold group-active:text-white web:transition-all",
-				ghost: "group-active:text-accent-foreground",
-				link: "text-primary group-active:underline",
+				default: "text-primary font-montserrat-bold tracking-wide uppercase",
+				destructive: "text-destructive-foreground font-montserrat-bold tracking-wide uppercase",
+				outline: "text-foreground font-montserrat-semibold tracking-wide uppercase",
+				secondary: "text-white font-montserrat-semibold tracking-wide uppercase",
+				funky: "text-primary font-montserrat-bold tracking-wide uppercase",
+				ghost: "text-foreground font-montserrat-medium",
+				link: "text-primary font-montserrat-medium underline",
 			},
 			size: {
 				default: "",
-				sm: "",
+				sm: "text-xs native:text-sm",
 				lg: "native:text-lg",
 				icon: "",
 			},
@@ -68,11 +67,7 @@ const Button = React.forwardRef<
 >(({ className, variant, size, ...props }, ref) => {
 	return (
 		<TextClassContext.Provider
-			value={buttonTextVariants({
-				variant,
-				size,
-				className: "web:pointer-events-none",
-			})}
+			value={buttonTextVariants({ variant, size })}
 		>
 			<Pressable
 				className={cn(
