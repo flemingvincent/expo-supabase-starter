@@ -537,7 +537,7 @@ export default function OnboardingScreen() {
 	return (
 		<>
 			{!showSuccess && (
-				<SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
+				<SafeAreaView style={{ flex: 1 }}>
 					<View
 						className="flex-grow bg-lightgreen"
 						style={{ backgroundColor: "#CCEA1F" }}
