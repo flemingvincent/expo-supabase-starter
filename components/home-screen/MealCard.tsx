@@ -20,7 +20,7 @@ interface MealCardProps {
 export const MealCard = ({
 	recipe,
 	onPress,
-	width = 280,
+	width = 320,
 	variant = "horizontal",
 }: MealCardProps) => {
 	const { tags } = useAppData();
@@ -31,7 +31,7 @@ export const MealCard = ({
 			onPress={onPress}
 			accessibilityRole="button"
 			accessibilityLabel={`View ${recipe.name} meal`}
-			activeOpacity={0.7}
+			activeOpacity={0.8}
 			style={{
 				width,
 			}}
@@ -39,30 +39,25 @@ export const MealCard = ({
 		>
 			<View
 				style={{
-					backgroundColor: colors.background,
-					borderColor: colors.text,
-					shadowColor: colors.text,
+					backgroundColor: "#FFFFFF",
+					borderColor: "#EBEBEB",
+					shadowColor: "#EBEBEB",
 					height: 380,
 				}}
-				className="border-2 rounded-2xl p-6 justify-between"
-				pointerEvents="none" // This is the key fix!
+				className="border-2 rounded-2xl shadow-[0px_4px_0px_0px] active:shadow-[0px_2px_0px_0px] active:translate-y-[2px] overflow-hidden"
+				pointerEvents="none"
 			>
-				{/* Top content section */}
-				<View pointerEvents="none">
-					{/* Header section */}
-					<View className="mb-4" pointerEvents="none">
-						<Text
-							style={{ color: colors.text }}
-							className="text-md font-montserrat-bold tracking-wide uppercase"
-						>
-							MEAL RECOMMENDATION
-						</Text>
-					</View>
-
-					{/* Image section */}
+				{/* Recipe Image */}
+				<View className="relative p-2" pointerEvents="none">
 					<View
-						style={{ backgroundColor: colors.text }}
-						className={`${variant === "horizontal" ? "aspect-[4/3]" : "aspect-square"} w-full rounded-xl overflow-hidden mb-4 mx-auto`}
+						className={`${variant === "horizontal" ? "aspect-[4/3]" : "aspect-square"} w-full overflow-hidden rounded-xl`}
+						style={{
+							shadowColor: "#000000",
+							shadowOffset: { width: 0, height: 0 },
+							shadowOpacity: 0.3,
+							shadowRadius: 8,
+							elevation: 8,
+						}}
 						pointerEvents="none"
 					>
 						<Image
@@ -74,51 +69,137 @@ export const MealCard = ({
 							className="w-full h-full"
 							contentFit="cover"
 						/>
+						
+						{/* Inner shadow overlay */}
+						<View
+							style={{
+								position: 'absolute',
+								top: 0,
+								left: 0,
+								right: 0,
+								bottom: 0,
+								shadowColor: "#000000",
+								shadowOffset: { width: 0, height: 0 },
+								shadowOpacity: 0.4,
+								shadowRadius: 12,
+								backgroundColor: 'transparent',
+							}}
+							className="rounded-xl"
+							pointerEvents="none"
+						/>
+						
+						{/* Alternative inner shadow using border gradient effect */}
+						<View
+							style={{
+								position: 'absolute',
+								top: 0,
+								left: 0,
+								right: 0,
+								bottom: 0,
+								borderWidth: 1,
+								borderColor: 'rgba(0, 0, 0, 0.1)',
+							}}
+							className="rounded-xl"
+							pointerEvents="none"
+						/>
 					</View>
 
-					{/* Title section */}
-					<Text
-						style={{ color: colors.text }}
-						className="text-2xl font-montserrat-bold tracking-wide uppercase leading-tight"
-						numberOfLines={3}
+					{/* Favorite Button Overlay */}
+					<View
+						style={{
+							backgroundColor: "#FFFFFF",
+							borderColor: "#EBEBEB",
+							position: 'absolute',
+							top: 12,
+							right: 12,
+						}}
+						className="w-8 h-8 rounded-lg border items-center justify-center"
+						pointerEvents="none"
 					>
-						{recipe.name}
-					</Text>
+						<Ionicons name="heart-outline" size={16} color="#25551b" />
+					</View>
 				</View>
 
-				{/* Info badges - always at bottom */}
-				<View className="flex-row justify-between items-center" pointerEvents="none">
-					<View
-						style={{
-							backgroundColor: colors.text + "20",
-							borderColor: colors.text,
-						}}
-						className="flex-row items-center gap-2 px-3 py-2 border rounded-xl"
-					>
-						<Ionicons name="star" size={16} color={colors.text} />
-						<Text
-							style={{ color: colors.text }}
-							className="font-montserrat-bold tracking-wide uppercase"
+				{/* Content Section */}
+				<View className="flex-1 p-4" pointerEvents="none">
+					{/* Stats Pills - matching your detail page style */}
+					<View className="flex-row gap-2 mb-3" pointerEvents="none">
+						<View
+							style={{
+								borderColor: colors.text,
+								backgroundColor: colors.background,
+								shadowColor: colors.text,
+							}}
+							className="flex-row items-center gap-1 px-2 py-1 border rounded-full shadow-[0px_1px_0px_0px]"
 						>
-							{recipe.difficulty || "Easy"}
-						</Text>
+							<Ionicons name="star" size={12} color={colors.text} />
+							<Text
+								style={{ color: colors.text }}
+								className="text-xs font-montserrat-bold"
+							>
+								{recipe.difficulty || "Easy"}
+							</Text>
+						</View>
+
+						{recipe.total_time && (
+							<View
+								style={{
+									borderColor: colors.text,
+									backgroundColor: colors.background,
+									shadowColor: colors.text,
+								}}
+								className="flex-row items-center gap-1 px-2 py-1 border rounded-full shadow-[0px_1px_0px_0px]"
+							>
+								<Ionicons name="time-outline" size={12} color={colors.text} />
+								<Text
+									style={{ color: colors.text }}
+									className="text-xs font-montserrat-bold"
+								>
+									{recipe.total_time}m
+								</Text>
+							</View>
+						)}
 					</View>
 
-					<View
-						style={{
-							backgroundColor: colors.text + "20",
-							borderColor: colors.text,
-						}}
-						className="flex-row items-center gap-2 px-3 py-2 border rounded-xl"
-					>
-						<Ionicons name="time-outline" size={16} color={colors.text} />
+					{/* Recipe Title */}
+					<View className="flex-1 mb-3" pointerEvents="none">
 						<Text
-							style={{ color: colors.text }}
-							className="font-montserrat-bold tracking-wide uppercase"
+							className="text-xl font-montserrat-bold text-gray-700 leading-tight"
+							numberOfLines={2}
 						>
-							{recipe.total_time}M
+							{recipe.name}
 						</Text>
+						
+						{recipe.description && (
+							<Text
+								className="text-sm font-montserrat-medium text-gray-500 mt-2 leading-5"
+								numberOfLines={2}
+							>
+								{recipe.description}
+							</Text>
+						)}
 					</View>
+
+					{/* Bottom Section */}
+					{/* <View className="space-y-3" pointerEvents="none">
+						<View
+							style={{
+								backgroundColor: "#CCEA1F",
+								borderColor: "#25551b",
+								shadowColor: "#25551b",
+							}}
+							className="flex-row items-center justify-center gap-2 px-3 py-2 border rounded-xl shadow-[0px_2px_0px_0px]"
+						>
+							<Ionicons name="flash" size={16} color="#25551b" />
+							<Text
+								style={{ color: "#25551b" }}
+								className="font-montserrat-bold text-sm tracking-wide uppercase"
+							>
+								98% Match
+							</Text>
+						</View>
+
+					</View> */}
 				</View>
 			</View>
 		</TouchableOpacity>

@@ -17,6 +17,7 @@ export interface Instruction {
     step_number: number;
     step_title?: string;
     instruction: string;
+    image_url?: string;
 }
 
 export interface RecipeIngredient {

@@ -1,33 +1,16 @@
-import { View, ScrollView } from "react-native";
+import { View } from "react-native";
 import { useAuth } from "@/context/supabase-provider";
-import { useAppData } from "@/context/app-data-provider";
 import { SafeAreaView } from "@/components/safe-area-view";
 import { Ionicons } from "@expo/vector-icons";
-
-import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
-import { Recipe } from "@/types/recipe";
 import { RecommendedMealsSection } from "@/components/home-screen/RecommendedMealsSection";
-import { supabase } from "@/config/supabase";
-import { usePressAnimation } from "@/hooks/onPressAnimation";
 
 export default function Home() {
-	const { profile, profileLoading } = useAuth();
-	const { userPreferences } = useAppData();
-
-	// Header color schemes that rotate
-	const headerColorSchemes = [
-		{ text: "#FF6525", background: "#FFE0D1" },
-		{ text: "#54CDC3", background: "#E8F9F7" },
-		{ text: "#FFB524", background: "#FFF2D6" },
-		{ text: "#F88675", background: "#FFE5E1" },
-	];
-	
-	const currentHeaderScheme = headerColorSchemes[new Date().getDay() % headerColorSchemes.length];
+	const { profileLoading } = useAuth();
 
 	if (profileLoading) {
 		return (
-			<SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+			<SafeAreaView className="flex-1 bg-white" edges={["top"]}>
 				<View className="flex-1 items-center justify-center px-4">
 					<View 
 						style={{ 
@@ -52,50 +35,17 @@ export default function Home() {
 		);
 	}
 
-	const handleMealPress = (meal: Recipe) => {
-		console.log("Meal pressed:", meal.name);
-		// TODO: Navigate to meal details
-	};
-
 	const handleSeeAllPress = () => {
 		console.log("See all pressed");
 		// TODO: Navigate to explore or full recommendations page
 	};
 
-	// Get greeting based on time of day
-	const getGreeting = () => {
-		const hour = new Date().getHours();
-		if (hour < 12) return "Good morning";
-		if (hour < 17) return "Good afternoon";
-		return "Good evening";
-	};
-
-	const greeting = getGreeting();
-	const userName = profile?.display_name || "there";
-
 	return (
-		<SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
-			<ScrollView
-				className="flex-1"
-				showsVerticalScrollIndicator={false}
-				contentContainerStyle={{ paddingBottom: 20 }}
-			>
-				{/* Simple Header Section */}
-				{/* <View className="px-4 pb-6">
-					<Text className="text-gray-900 text-lg font-montserrat-semibold mb-1">
-						{greeting}
-					</Text>
-					<Text className="text-gray-900 text-2xl font-montserrat-bold tracking-wide">
-						{userName}!
-					</Text>
-				</View> */}
-
-				{/* Recommended Meals Section */}
-				<RecommendedMealsSection
-					mealsPerWeek={6} // Temporary hardcoded value
-					onSeeAllPress={handleSeeAllPress}
-				/>
-			</ScrollView>
+		<SafeAreaView className="flex-1 bg-white" edges={["top"]}>
+			<RecommendedMealsSection
+				mealsPerWeek={6} // Temporary hardcoded value
+				onSeeAllPress={handleSeeAllPress}
+			/>
 		</SafeAreaView>
 	);
 }

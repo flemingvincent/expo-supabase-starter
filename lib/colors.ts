@@ -36,8 +36,8 @@ export const RECIPE_COLOR_SCHEMES: Record<string, ColorScheme> = {
 	},
 	// Default fallback
 	default: {
-		text: "#FF6F61", // Salmon Pink
-		background: "#FFE6E2",
+		text: "#FFB524", // Yellow/Golden
+		background: "#FFF2D6",
 	},
 };
 
