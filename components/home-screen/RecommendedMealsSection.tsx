@@ -425,7 +425,8 @@ export const RecommendedMealsSection = ({
 						contentContainerStyle={{
 							paddingHorizontal: 16,
 							paddingRight: 32,
-						}}
+                            paddingBottom: 4
+                        }}
 						decelerationRate="fast"
 						snapToInterval={334}
 						snapToAlignment="start"
