@@ -3,13 +3,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/ui/text";
 import { Image } from "@/components/image";
 import { Recipe } from "@/types/recipe";
-import { useAppData } from "@/context/app-data-provider";
+import { RecipeWithTags, useAppData } from "@/context/app-data-provider";
 import { getRecipeColorScheme } from "@/lib/colors";
 import * as Haptics from 'expo-haptics';
-
-export interface RecipeWithTags extends Recipe {
-	tagIds?: string[];
-}
 
 interface MealCardProps {
 	recipe: RecipeWithTags;
