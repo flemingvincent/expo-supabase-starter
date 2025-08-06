@@ -1,12 +1,9 @@
 import React from "react";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-
-import { useColorScheme } from "@/lib/useColorScheme";
 import { colors } from "@/constants/colors";
 
 export default function TabsLayout() {
-	const { colorScheme } = useColorScheme();
 
 	return (
 		<Tabs
@@ -38,7 +35,7 @@ export default function TabsLayout() {
 					),
 				}} 
 			/>
-			<Tabs.Screen 
+			{/* <Tabs.Screen 
 				name="explore" 
 				options={{ 
 					title: "Explore",
@@ -46,7 +43,7 @@ export default function TabsLayout() {
 						<Ionicons name="search" size={size} color={color} />
 					),
 				}} 
-			/>
+			/> */}
 			<Tabs.Screen 
 				name="saved" 
 				options={{ 

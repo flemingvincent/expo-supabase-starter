@@ -1,5 +1,5 @@
 import { View, ScrollView, TouchableOpacity } from "react-native";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "expo-router";
 import { supabase } from "@/config/supabase";
 import { Ionicons } from "@expo/vector-icons";
@@ -8,50 +8,53 @@ import { Button } from "@/components/ui/button";
 import { Recipe } from "@/types/recipe";
 import { MealCard } from "./MealCard";
 import { usePressAnimation } from "@/hooks/onPressAnimation";
-
-interface RecommendedMealsSectionProps {
-	mealsPerWeek: number;
-	onSeeAllPress?: () => void;
-}
-interface RecipeWithTags extends Recipe {
-	tagIds?: string[];
-}
+import { RecipeWithTags, useAppData } from "@/context/app-data-provider";
 
 // Mock calendar data - generate weeks starting Monday and ending Sunday
 const generateMockCalendarWeeks = () => {
 	const weeks = [];
 	const today = new Date();
-	
+
 	// Get current week's Monday
 	const currentMonday = new Date(today);
 	const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
 	const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // If Sunday, go back 6 days
 	currentMonday.setDate(today.getDate() - daysFromMonday);
-	
+
 	// Generate 5 weeks: 2 previous, current, 2 next
 	for (let weekOffset = -2; weekOffset <= 2; weekOffset++) {
 		const weekStart = new Date(currentMonday);
-		weekStart.setDate(currentMonday.getDate() + (weekOffset * 7));
-		
+		weekStart.setDate(currentMonday.getDate() + weekOffset * 7);
+
 		const weekEnd = new Date(weekStart);
 		weekEnd.setDate(weekStart.getDate() + 6);
-		
-		const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-		
-		// Format week display
+
+		const monthNames = [
+			"Jan",
+			"Feb",
+			"Mar",
+			"Apr",
+			"May",
+			"Jun",
+			"Jul",
+			"Aug",
+			"Sep",
+			"Oct",
+			"Nov",
+			"Dec",
+		];
+
+		// Format week display - always include month names
 		const startMonth = monthNames[weekStart.getMonth()];
 		const endMonth = monthNames[weekEnd.getMonth()];
 		const startDate = weekStart.getDate();
 		const endDate = weekEnd.getDate();
-		
-		// Handle cross-month weeks
-		const dateRange = startMonth === endMonth 
-			? `${startDate}-${endDate}`
-			: `${startDate} ${startMonth} - ${endDate} ${endMonth}`;
-		
+
+		const dateRange = `${startDate} ${startMonth} - ${endDate} ${endMonth}`;
+
 		// Check if this week contains today
 		const isCurrentWeek = weekOffset === 0;
-		
+
 		// Generate title based on week offset
 		let title;
 		if (weekOffset < -1) {
@@ -65,7 +68,7 @@ const generateMockCalendarWeeks = () => {
 		} else {
 			title = `${weekOffset} weeks ahead`;
 		}
-		
+
 		weeks.push({
 			id: weekOffset.toString(),
 			weekStart: weekStart.toISOString(),
@@ -78,68 +81,29 @@ const generateMockCalendarWeeks = () => {
 			mealCount: Math.floor(Math.random() * 8) + 2, // 2-9 meals per week
 		});
 	}
-	
+
 	return weeks;
 };
 
-export const RecommendedMealsSection = ({
-	mealsPerWeek,
-	onSeeAllPress,
-}: RecommendedMealsSectionProps) => {
+export const RecommendedMealsSection = () => {
 	const router = useRouter();
-	const [meals, setMeals] = useState<RecipeWithTags[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
 	const [selectedWeek, setSelectedWeek] = useState<string>("0"); // Current week ID
 	const [calendarWeeks] = useState(generateMockCalendarWeeks());
-	
+	const calendarScrollRef = useRef<ScrollView>(null);
+
+	// Use the context instead of local state
+	const {
+		recommendedMeals,
+		loading,
+		error,
+		getRecommendedMeals,
+		refreshRecommendations,
+	} = useAppData();
+
 	const buttonPress = usePressAnimation({
 		hapticStyle: "Medium",
 		pressDistance: 4,
 	});
-
-	const fetchRecommendedMeals = async () => {
-		try {
-			setLoading(true);
-			setError(null);
-
-			// Fetch all recipes with their associated tag_ids from the junction table
-			let { data: recipes, error } = await supabase
-				.from("recipe")
-				.select(
-					`
-				*,
-				recipe_tags(
-					tag_id
-				)
-			`,
-				)
-				.limit(Math.max(mealsPerWeek, 20));
-
-			if (error) {
-				console.error("Error fetching recommended meals:", error);
-				setError(error.message);
-				return;
-			}
-
-			// Transform the data to extract just the tag_ids
-			const recipesWithTags =
-				recipes?.map((recipe) => ({
-					...recipe,
-					tagIds:
-						recipe.recipe_tags?.map((rt: any) => rt.tag_id).filter(Boolean) ||
-						[],
-				})) || [];
-
-			console.log("Fetched recipes with tags:", recipesWithTags);
-			setMeals(recipesWithTags);
-		} catch (err) {
-			console.error("Unexpected error fetching meals:", err);
-			setError("Failed to fetch recommended meals");
-		} finally {
-			setLoading(false);
-		}
-	};
 
 	// Handle meal press navigation
 	const handleMealPress = (meal: Recipe) => {
@@ -147,93 +111,84 @@ export const RecommendedMealsSection = ({
 		router.push(`/recipe/${meal.id}`);
 	};
 
-	// Handle week selection
-	const handleWeekPress = (weekId: string) => {
+	const handleWeekPress = useCallback((weekId: string) => {
 		setSelectedWeek(weekId);
-		// Here you would typically filter meals based on selected week
 		console.log("Selected week:", weekId);
-	};
+	}, []);
 
-	useEffect(() => {
-		fetchRecommendedMeals();
-	}, [mealsPerWeek]);
-
-	const displayMeals = meals.slice(0, Math.min(meals.length));
-	const selectedWeekData = calendarWeeks.find(week => week.id === selectedWeek);
+	const displayMeals = getRecommendedMeals();
+	const selectedWeekData = calendarWeeks.find(
+		(week) => week.id === selectedWeek,
+	);
 
 	// Create sticky calendar component
-	const StickyCalendarSection = () => (
-		<View 
-			className="px-3 pb-4"
-			style={{
-				backgroundColor: "#FFFFFF",
-				borderBottomWidth: 1,
-				borderBottomColor: "#E2E2E2",
-				position: 'absolute',
-				top: 0,
-				left: 0,
-				right: 0,
-				zIndex: 10,
-			}}
-		>
-			<ScrollView 
-				horizontal 
-				showsHorizontalScrollIndicator={false}
-				contentContainerStyle={{ paddingHorizontal: 12 }}
+	const StickyCalendarSection = useMemo(
+		() => (
+			<View
+				className="pb-4"
+				style={{
+					backgroundColor: "#FFFFFF",
+					borderBottomWidth: 1,
+					borderBottomColor: "#E2E2E2",
+					position: "absolute",
+					top: 0,
+					left: 0,
+					right: 0,
+					zIndex: 10,
+				}}
 			>
-				<View className="flex-row gap-3 py-1">
-					{calendarWeeks.map((week) => (
-						<TouchableOpacity
-							key={week.id}
-							onPress={() => handleWeekPress(week.id)}
-							style={{
-								backgroundColor: week.id === selectedWeek 
-									? "#CCEA1F" 
-									: "#FFFFFF",
-								borderColor: week.id === selectedWeek 
-									? "#25551b"
-									: "#E2E2E2",
-								shadowColor: week.id === selectedWeek 
-									? "#25551b"
-									: "#E2E2E2",
-							}}
-							className="py-4 px-4 border-2 rounded-xl items-center min-w-[100px] shadow-[0px_2px_0px_0px] active:shadow-[0px_0px_0px_0px] active:translate-y-[2px]"
-						>
-							<Text 
-								className="text-xs font-montserrat-bold mb-1"
-								style={{ 
-									color: week.id === selectedWeek 
-										? "#25551b"
-										: "#6B7280" 
+				<ScrollView
+					ref={calendarScrollRef}
+					horizontal
+					showsHorizontalScrollIndicator={false}
+					contentContainerStyle={{ paddingHorizontal: 12 }}
+				>
+					<View className="flex-row gap-3 py-1">
+						{calendarWeeks.map((week) => (
+							<TouchableOpacity
+								key={week.id}
+								onPress={() => handleWeekPress(week.id)}
+								style={{
+									backgroundColor:
+										week.id === selectedWeek ? "#CCEA1F" : "#FFFFFF",
+									borderColor: week.id === selectedWeek ? "#25551b" : "#E2E2E2",
+									shadowColor: week.id === selectedWeek ? "#25551b" : "#E2E2E2",
 								}}
+								className="py-4 px-4 border-2 rounded-xl items-center min-w-[100px] shadow-[0px_2px_0px_0px] active:shadow-[0px_0px_0px_0px] active:translate-y-[2px]"
 							>
-								{week.title}
-							</Text>
-							<Text 
-								className="text-lg font-montserrat-semibold"
-								style={{ 
-									color: week.id === selectedWeek 
-										? "#25551b"
-										: "#374151" 
-								}}
-							>
-								{week.displayRange}
-							</Text>
-						</TouchableOpacity>
-					))}
-				</View>
-			</ScrollView>
-		</View>
+								<Text
+									className="text-xs font-montserrat-bold mb-1"
+									style={{
+										color: week.id === selectedWeek ? "#25551b" : "#6B7280",
+									}}
+								>
+									{week.title}
+								</Text>
+								<Text
+									className="text-lg font-montserrat-semibold"
+									style={{
+										color: week.id === selectedWeek ? "#25551b" : "#374151",
+									}}
+								>
+									{week.displayRange}
+								</Text>
+							</TouchableOpacity>
+						))}
+					</View>
+				</ScrollView>
+			</View>
+		),
+		[calendarWeeks, selectedWeek, handleWeekPress],
 	);
 
 	// Enhanced loading state with sticky calendar
 	if (loading) {
 		return (
 			<View className="flex-1">
-				<StickyCalendarSection />
-				
+				{StickyCalendarSection}
+
 				{/* Content that scrolls underneath - with top padding for sticky header */}
-				<ScrollView 
+				<ScrollView
 					className="flex-1"
 					contentContainerStyle={{ paddingTop: 100 }} // Adjust based on calendar height
 				>
@@ -260,11 +215,7 @@ export const RecommendedMealsSection = ({
 								}}
 								className="w-12 h-12 rounded-xl items-center justify-center"
 							>
-								<Ionicons
-									name="restaurant"
-									size={24}
-									color="#25551b"
-								/>
+								<Ionicons name="restaurant" size={24} color="#25551b" />
 							</View>
 						</View>
 					</View>
@@ -322,9 +273,9 @@ export const RecommendedMealsSection = ({
 	if (error) {
 		return (
 			<View className="flex-1">
-				<StickyCalendarSection />
-				
-				<ScrollView 
+				{StickyCalendarSection}
+
+				<ScrollView
 					className="flex-1"
 					contentContainerStyle={{ paddingTop: 100 }} // Adjust based on calendar height
 				>
@@ -350,10 +301,12 @@ export const RecommendedMealsSection = ({
 							</View>
 						</View>
 
-						<Text className="text-[#FF6525]/80 text-center mb-4">{error}</Text>
+						<Text className="text-[#FF6525]/80 text-center mb-4">
+							{error?.message}
+						</Text>
 
 						<Button
-							onPress={fetchRecommendedMeals}
+							onPress={refreshRecommendations}
 							variant="outline"
 							className="border-[#FF6525] bg-transparent"
 							{...buttonPress}
@@ -379,10 +332,10 @@ export const RecommendedMealsSection = ({
 	return (
 		<View className="flex-1">
 			{/* Sticky Calendar at the top */}
-			<StickyCalendarSection />
-			
+			{StickyCalendarSection}
+
 			{/* Scrollable Content underneath */}
-			<ScrollView 
+			<ScrollView
 				className="flex-1 bg-background"
 				contentContainerStyle={{ paddingTop: 110, paddingBottom: 20 }}
 				showsVerticalScrollIndicator={false}
@@ -400,20 +353,23 @@ export const RecommendedMealsSection = ({
 					<View className="flex-row items-center justify-between">
 						<View className="flex-1">
 							<Text className="text-xl uppercase font-montserrat-bold tracking-wide mb-1 text-gray-700">
-								{selectedWeekData?.isCurrentWeek ? "Recommended for you" : `Week ${selectedWeekData?.displayRange} meals`}
+								{selectedWeekData?.isCurrentWeek
+									? "Recommended for you"
+									: `Week ${selectedWeekData?.displayRange} meals`}
 							</Text>
 							<Text className="text-md font-montserrat text-gray-500">
-                                {selectedWeekData?.isCurrentWeek 
-                                    ? `We picked ${mealsPerWeek} meal${mealsPerWeek > 1 ? 's' : ''} we think you'll love` 
-                                    : `Meals from ${selectedWeekData?.displayRange}`}
+								{selectedWeekData?.isCurrentWeek
+									? `We picked ${recommendedMeals.length} meal${recommendedMeals.length > 1 ? "s" : ""} we think you'll love`
+									: `Meals from ${selectedWeekData?.displayRange}`}
 							</Text>
 						</View>
-                        	
-                        <View className="px-4 py-2 flex-row items-center justify-center gap-1 rounded-lg bg-primary text-lightgreen">
-                            <Text className="text-sm font-montserrat-semibold text-[#CCEA1F]">78%</Text>
-                            <Ionicons name="flash" size={24} color="#CCEA1F" />
-                        </View>
 
+						<View className="px-4 py-2 flex-row items-center justify-center gap-1 rounded-lg bg-lightgreen text-primary">
+							<Text className="text-sm font-montserrat-semibold text-primary">
+								78%
+							</Text>
+							<Ionicons name="flash" size={24} color="#25551b" />
+						</View>
 					</View>
 				</View>
 
@@ -425,8 +381,8 @@ export const RecommendedMealsSection = ({
 						contentContainerStyle={{
 							paddingHorizontal: 16,
 							paddingRight: 32,
-                            paddingBottom: 4
-                        }}
+							paddingBottom: 4,
+						}}
 						decelerationRate="fast"
 						snapToInterval={334}
 						snapToAlignment="start"
@@ -453,10 +409,9 @@ export const RecommendedMealsSection = ({
 							<Ionicons name="calendar-outline" size={32} color="#FFF" />
 						</View>
 						<Text className="text-[#6B8E23] text-xl font-montserrat-bold tracking-wide uppercase mb-2 text-center">
-							{selectedWeekData?.isCurrentWeek 
-								? "No meals this week" 
-								: `No meals for week ${selectedWeekData?.displayRange}`
-							}
+							{selectedWeekData?.isCurrentWeek
+								? "No meals this week"
+								: `No meals for week ${selectedWeekData?.displayRange}`}
 						</Text>
 						<Text className="text-[#6B8E23]/80 text-center font-montserrat-semibold">
 							Tap on a week above to plan meals or browse our recommendations

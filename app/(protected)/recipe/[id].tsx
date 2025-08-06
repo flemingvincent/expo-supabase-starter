@@ -333,7 +333,7 @@ export default function RecipeDetail() {
 			</View>
 
 			<Animated.ScrollView
-				className="flex-1 bg-white"
+				className="flex-1 bg-background"
 				showsVerticalScrollIndicator={false}
 				contentContainerStyle={{ paddingTop: 74 }} // Add padding for fixed header
 				onScroll={handleScroll}
@@ -603,34 +603,37 @@ export default function RecipeDetail() {
 								className="border-2 rounded-2xl p-4 shadow-[0px_4px_0px_0px]"
 							>
 								{instructions.map((instruction, index) => (
-									<View
-										key={index}
-										className="flex-col justify-center items-center py-4 border-b border-gray-200 last:border-b-0"
-									>
-
-                                        {/* image */}
-                                        {instruction.image_url && (
-                                            <View className="w-24 h-24 mb-2">
+                                    <View
+                                        key={index}
+                                        className="flex-col justify-center items-center py-4 border-b border-gray-200 last:border-b-0"
+                                    >
+                                        {/* image or step number fallback */}
+                                        <View className="w-24 h-24 mb-2">
+                                            {instruction.image_url ? (
                                                 <Image
                                                     source={{ uri: instruction.image_url }}
                                                     className="w-full h-full rounded-lg"
                                                     resizeMode="cover"
                                                 />
-                                            </View>
-                                        )}
+                                            ) : (
+                                                <View className="w-full h-full rounded-full bg-gray-100 items-center justify-center">
+                                                    <Text className="text-2xl font-montserrat-bold text-gray-600">
+                                                        {index + 1}
+                                                    </Text>
+                                                </View>
+                                            )}
+                                        </View>
 
                                         {instruction.step_title && (
-                                            <Text
-                                                className="w-full text-center text-lg font-montserrat-bold mb-2"
-                                            >
+                                            <Text className="w-full text-center text-lg font-montserrat-bold mb-2">
                                                 {instruction.step_title}
                                             </Text>
                                         )}
 
-										<Text className="flex-1 text-base leading-6 font-montserrat-medium text-gray-500">
-											{instruction.instruction}
-										</Text>
-									</View>
+                                        <Text className="flex-1 text-base leading-6 font-montserrat-medium text-gray-500">
+                                            {instruction.instruction}
+                                        </Text>
+                                    </View>
 								))}
 							</View>
 						</View>

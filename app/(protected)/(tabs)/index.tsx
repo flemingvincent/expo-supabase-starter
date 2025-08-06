@@ -35,17 +35,9 @@ export default function Home() {
 		);
 	}
 
-	const handleSeeAllPress = () => {
-		console.log("See all pressed");
-		// TODO: Navigate to explore or full recommendations page
-	};
-
 	return (
 		<SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-			<RecommendedMealsSection
-				mealsPerWeek={6} // Temporary hardcoded value
-				onSeeAllPress={handleSeeAllPress}
-			/>
+			<RecommendedMealsSection/>
 		</SafeAreaView>
 	);
 }
