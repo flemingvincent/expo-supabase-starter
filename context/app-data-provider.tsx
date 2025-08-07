@@ -46,7 +46,7 @@ const AppDataContext = createContext<AppDataState>({
 	userPreferences: {
 		id: "",
 		user_id: "",
-		goal_tag_id: "",
+		goal_ids: [],
 		meals_per_week: 1,
 		serves_per_meal: 1,
 		meal_types: [],
@@ -76,7 +76,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 	const [userPreferences, setUserPreferences] = useState<UserPreferences>({
 		id: "",
 		user_id: "",
-		goal_tag_id: "",
+		goal_ids: [],
 		meals_per_week: 1,
 		serves_per_meal: 1,
 		user_preference_tags: [],
@@ -236,7 +236,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 					setUserPreferences({
 						id: "",
 						user_id: session?.user?.id || "",
-						goal_tag_id: "",
+						goal_ids: [],
 						meals_per_week: 1,
 						serves_per_meal: 1,
 						user_preference_tags: [],
@@ -276,7 +276,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				setUserPreferences({
 					id: "",
 					user_id: session?.user?.id || "",
-					goal_tag_id: "",
+					goal_ids: [],
 					meals_per_week: 1,
 					serves_per_meal: 1,
 					user_preference_tags: [],
@@ -398,7 +398,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		if (recipes.length && userPreferences.id) {
 			generateRecommendations();
 		}
-	}, [recipes, userPreferences.user_preference_tags, userPreferences.goal_tag_id]);
+	}, [recipes, userPreferences]);
 
 	return (
 		<AppDataContext.Provider

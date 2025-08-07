@@ -30,7 +30,7 @@ export interface Unit {
 export interface UserPreferences {
     id: string;
     user_id: string;
-    goal_tag_id: string;
+    goal_ids: string[];
     meals_per_week: number;
     serves_per_meal: number;
     meal_types: string[];

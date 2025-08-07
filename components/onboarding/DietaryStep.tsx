@@ -256,7 +256,7 @@ const PreferencesStep = ({
                         >
                             <Button
                                 size="lg"
-                                variant="secondary"
+                                variant="funky"
                                 onPress={onNext}
                                 disabled={isLoading}
                                 className="w-full"
@@ -270,13 +270,13 @@ const PreferencesStep = ({
                                 {...buttonPress}
                             >
                                 <View className="flex-row items-center justify-center">
-                                    <Text className="text-white text-xl mr-2 font-semibold">
+                                    <Text className="text-primary text-xl mr-2 font-semibold">
                                         {isLoading ? "Saving..." : "Let's get cooking"}
                                     </Text>
                                     <Ionicons
                                         name="arrow-forward"
                                         size={20}
-                                        color="#fff"
+                                        color="#25551b"
                                     />
                                 </View>
                             </Button>

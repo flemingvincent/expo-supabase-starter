@@ -256,7 +256,7 @@ export default function OnboardingScreen() {
 		postcode: profile?.post_code ?? 0,
 		mealsPerWeek: userPreferences?.meals_per_week ?? 1,
 		servesPerMeal: userPreferences?.serves_per_meal ?? 1,
-		goalId: userPreferences?.goal_tag_id ?? null,
+		goalIds: userPreferences?.goal_ids ?? [],
 		mealTypes: userPreferences?.meal_types ?? [],
 		userPreferenceTags: userPreferences?.user_preference_tags ?? [],
 	});
@@ -318,7 +318,7 @@ export default function OnboardingScreen() {
 						user_id: session?.user?.id,
 						meals_per_week: formData.mealsPerWeek,
 						serves_per_meal: formData.servesPerMeal,
-						goal_tag_id: formData.goalId,
+						goal_tag_id: formData.goalIds,
 					},
 					{ onConflict: "user_id" },
 				)
