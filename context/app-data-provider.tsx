@@ -46,10 +46,8 @@ const AppDataContext = createContext<AppDataState>({
 	userPreferences: {
 		id: "",
 		user_id: "",
-		goal_ids: [],
 		meals_per_week: 1,
 		serves_per_meal: 1,
-		meal_types: [],
 	},
 	loading: false,
 	error: null,
@@ -76,11 +74,9 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 	const [userPreferences, setUserPreferences] = useState<UserPreferences>({
 		id: "",
 		user_id: "",
-		goal_ids: [],
 		meals_per_week: 1,
 		serves_per_meal: 1,
 		user_preference_tags: [],
-		meal_types: [],
 		created_at: "",
 	});
 	const [loading, setLoading] = useState(false);
@@ -236,11 +232,9 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 					setUserPreferences({
 						id: "",
 						user_id: session?.user?.id || "",
-						goal_ids: [],
 						meals_per_week: 1,
 						serves_per_meal: 1,
 						user_preference_tags: [],
-						meal_types: [],
 					});
 					return;
 				}
@@ -249,22 +243,19 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 
 			if (prefData) {
 				// Then get associated tags from the junction table
-				const { data: tagData, error: tagError } = await supabase
-					.from("user_preference_tags")
-					.select("tag_id")
-					.eq("user_preference_id", prefData.id);
+                const { data: tagData, error: tagError } = await supabase
+                    .from("user_preference_tags")
+                    .select("tag_id, priority")
+                    .eq("user_preference_id", prefData.id);
 
 				if (tagError) {
 					throw new Error(tagError.message);
 				}
 
-				// Extract tag_ids into a simple array
-				const tagIds = tagData?.map(item => item.tag_id) || [];
-
 				// Combine the data
 				const updatedPreferences = {
 					...prefData,
-					user_preference_tags: tagIds
+					user_preference_tags: tagData
 				};
 
 				setUserPreferences(updatedPreferences);
@@ -276,11 +267,9 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				setUserPreferences({
 					id: "",
 					user_id: session?.user?.id || "",
-					goal_ids: [],
 					meals_per_week: 1,
 					serves_per_meal: 1,
 					user_preference_tags: [],
-					meal_types: [],
 				});
 			}
 		} catch (error) {
@@ -303,7 +292,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		// Score recipes based on tag matches
 		const scoredRecipes = recipesToFilter.map(recipe => {
 			const matchingTags = recipe.tagIds?.filter(tagId => 
-				userPreferences.user_preference_tags?.includes(tagId)
+				userPreferences.user_preference_tags?.find(tag => tag.tag_id === tagId)
 			) ?? [];
 			
 			const score = matchingTags.length;

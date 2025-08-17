@@ -1,3 +1,5 @@
+import { UserPreferenceTag } from "./state";
+
 export interface FormData {
     name: string;
     country: string;
@@ -5,7 +7,5 @@ export interface FormData {
     postcode: number;
     mealsPerWeek: number;
     servesPerMeal: number;
-    mealTypes: string[];
-    goalIds: string[];
-    userPreferenceTags: string[];
+    userPreferenceTags: UserPreferenceTag[];
 }

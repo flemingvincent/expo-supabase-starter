@@ -19,6 +19,8 @@ import { supabase } from "@/config/supabase";
 import { FormData } from "@/types/onboarding";
 import { useAppData } from "@/context/app-data-provider";
 import * as Haptics from 'expo-haptics';
+import { useAuth } from "@/context/supabase-provider";
+import { UserPreferenceTag } from "@/types/state";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -35,7 +37,7 @@ interface GoalsStepProps {
 interface DraggableGoal {
     id: string;
     name: string;
-    order: number;
+    priority: number;
 }
 
 const GoalsStep = ({
@@ -106,41 +108,32 @@ const GoalsStep = ({
 
     // Initialize ordered goals from tags
     useEffect(() => {
+        const userPreferenceTags = formData.userPreferenceTags || [];
         const goalTags = tags.filter((tag) => tag.type === "goal");
-        
-        // Check if we already have ordered goals in formData
-        if (formData.goalIds && formData.goalIds.length > 0) {
-            // Restore the previous order
-            const orderedFromFormData = formData.goalIds.map((id, index) => {
-                const tag = goalTags.find(t => t.id === id);
-                return tag ? {
-                    id: tag.id,
-                    name: tag.name,
-                    order: index
+
+        const userGoalTags = userPreferenceTags.filter((tag) => goalTags.some(g => g.id === tag.tag_id));
+
+        if (userGoalTags && userGoalTags.length > 0) {
+            const orderedTags = userGoalTags.map((tag, index) => {
+                const goalTag = goalTags.find(t => t.id === tag.tag_id);
+
+                return goalTag ? {
+                    id: goalTag.id,
+                    name: goalTag.name,
+                    priority: tag.priority ?? index + 1,
                 } : null;
             }).filter(Boolean) as DraggableGoal[];
-            
-            // Add any new goals that weren't in formData
-            const missingGoals = goalTags
-                .filter(tag => !formData.goalIds.includes(tag.id))
-                .map((tag, index) => ({
-                    id: tag.id,
-                    name: tag.name,
-                    order: orderedFromFormData.length + index
-                }));
-            
-            const allGoals = [...orderedFromFormData, ...missingGoals];
-            setOrderedGoals(allGoals);
-            setHasUserInteracted(true); // They've been here before
+
+            setOrderedGoals(orderedTags);
+            setHasUserInteracted(true);
         } else {
-            // First time on this step - set default order but DON'T save to formData yet
+
             const initialOrderedGoals = goalTags.map((tag, index) => ({
                 id: tag.id,
                 name: tag.name,
-                order: index
+                priority: index
             }));
             setOrderedGoals(initialOrderedGoals);
-            // DON'T call handleFormChange here - wait for user interaction
         }
         
         // Initialize animation values for each goal
@@ -153,6 +146,17 @@ const GoalsStep = ({
             buttonScales[`${tag.id}-down`] = new Animated.Value(1);
         });
     }, [tags]);
+
+    useEffect(() => {
+        orderedGoals.forEach((goal) => {
+            if (!cardAnimations[goal.id]) {
+                cardAnimations[goal.id] = new Animated.Value(1);
+            }
+
+            buttonScales[`${goal.id}-up`] = new Animated.Value(1);
+            buttonScales[`${goal.id}-down`] = new Animated.Value(1);
+        });
+    }, [orderedGoals]);
 
     const animateButtonPress = (goalId: string, direction: 'up' | 'down') => {
         const scaleValue = buttonScales[`${goalId}-${direction}`];
@@ -228,7 +232,7 @@ const GoalsStep = ({
         
         animateButtonPress(currentGoal.id, 'up');
         setAnimatingIndex(index);
-        setHasUserInteracted(true); // Mark that user has interacted
+        setHasUserInteracted(true);
         
         animateCardSwap(currentGoal.id, previousGoal.id, () => {
             const newGoals = [...orderedGoals];
@@ -237,12 +241,10 @@ const GoalsStep = ({
             // Update order values
             const updatedGoals = newGoals.map((goal, idx) => ({
                 ...goal,
-                order: idx
+                priority: idx
             }));
             
             setOrderedGoals(updatedGoals);
-            // Now update formData since user has interacted
-            handleFormChange("goalIds", updatedGoals.map(g => g.id));
             
             setTimeout(() => setAnimatingIndex(null), 300);
         });
@@ -267,23 +269,29 @@ const GoalsStep = ({
             // Update order values
             const updatedGoals = newGoals.map((goal, idx) => ({
                 ...goal,
-                order: idx
+                priority: idx
             }));
             
             setOrderedGoals(updatedGoals);
-            // Now update formData since user has interacted
-            handleFormChange("goalIds", updatedGoals.map(g => g.id));
-            
             setTimeout(() => setAnimatingIndex(null), 300);
         });
     };
 
     const handleContinue = () => {
-        // If user hasn't interacted, save the default order
-        if (!hasUserInteracted) {
-            handleFormChange("goalIds", orderedGoals.map(g => g.id));
-        }
-        // Proceed to next step
+        const nonGoalTags = formData.userPreferenceTags.filter(tag => {
+            const goalTags = tags.filter(t => t.type === "goal");
+            return !goalTags.some(g => g.id === tag.tag_id);
+        });
+
+        const updatedGoalTags: UserPreferenceTag[] = orderedGoals.map((goal, index) => ({
+            tag_id: goal.id,
+            priority: index + 1
+        }));
+
+        const allTags = [...nonGoalTags, ...updatedGoalTags];
+
+        handleFormChange('userPreferenceTags', allTags);
+
         onNext();
     };
 

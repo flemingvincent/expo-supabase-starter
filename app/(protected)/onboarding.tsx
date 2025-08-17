@@ -5,7 +5,8 @@ import {
 	Platform,
 	Animated,
 	Dimensions,
-    Easing,
+	Easing,
+    Alert,
 } from "react-native";
 import { SafeAreaView } from "@/components/safe-area-view";
 import { router } from "expo-router";
@@ -26,6 +27,7 @@ import GoalsStep from "@/components/onboarding/GoalsStep";
 import PreferencesStep from "@/components/onboarding/DietaryStep";
 import MealTypesStep from "@/components/onboarding/MealType";
 import { useAppData } from "@/context/app-data-provider";
+import { UserPreferenceTag } from "@/types/state";
 
 const { width, height } = Dimensions.get("window");
 
@@ -42,7 +44,7 @@ const SuccessAnimation = ({
 	const contentTranslateY = useRef(new Animated.Value(20)).current;
 	const titleOpacity = useRef(new Animated.Value(0)).current;
 	const titleTranslateY = useRef(new Animated.Value(-10)).current;
-	
+
 	const [loadingText, setLoadingText] = useState(
 		"Analyzing your preferences...",
 	);
@@ -114,7 +116,15 @@ const SuccessAnimation = ({
 				clearInterval(textInterval);
 			};
 		}
-	}, [visible, fadeAnim, scaleAnim, progressAnim, contentTranslateY, titleOpacity, titleTranslateY]);
+	}, [
+		visible,
+		fadeAnim,
+		scaleAnim,
+		progressAnim,
+		contentTranslateY,
+		titleOpacity,
+		titleTranslateY,
+	]);
 
 	if (!visible) return null;
 
@@ -132,12 +142,12 @@ const SuccessAnimation = ({
 			}}
 		>
 			<SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
-				<View 
-					style={{ 
-						flex: 1, 
-						justifyContent: "center", 
+				<View
+					style={{
+						flex: 1,
+						justifyContent: "center",
 						alignItems: "center",
-						paddingHorizontal: 16
+						paddingHorizontal: 16,
 					}}
 				>
 					{/* Animated Title Section matching other components */}
@@ -171,7 +181,7 @@ const SuccessAnimation = ({
 						style={{
 							transform: [
 								{ scale: scaleAnim },
-								{ translateY: contentTranslateY }
+								{ translateY: contentTranslateY },
 							],
 						}}
 						className="w-full bg-background/80 rounded-2xl p-8 shadow-md mb-8 items-center"
@@ -181,7 +191,7 @@ const SuccessAnimation = ({
 							className="w-32 h-32 mx-auto mb-4"
 							contentFit="contain"
 						/>
-						
+
 						{/* Progress Section */}
 						<View className="w-full mb-6">
 							<View
@@ -241,7 +251,7 @@ const SuccessAnimation = ({
 
 export default function OnboardingScreen() {
 	const { session, profile, updateProfile } = useAuth();
-	const { userPreferences } = useAppData();
+	const { userPreferences, tags } = useAppData();
 	const [currentStep, setCurrentStep] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
 	const [showSuccess, setShowSuccess] = useState(false);
@@ -256,8 +266,6 @@ export default function OnboardingScreen() {
 		postcode: profile?.post_code ?? 0,
 		mealsPerWeek: userPreferences?.meals_per_week ?? 1,
 		servesPerMeal: userPreferences?.serves_per_meal ?? 1,
-		goalIds: userPreferences?.goal_ids ?? [],
-		mealTypes: userPreferences?.meal_types ?? [],
 		userPreferenceTags: userPreferences?.user_preference_tags ?? [],
 	});
 
@@ -318,15 +326,12 @@ export default function OnboardingScreen() {
 						user_id: session?.user?.id,
 						meals_per_week: formData.mealsPerWeek,
 						serves_per_meal: formData.servesPerMeal,
-						goal_tag_id: formData.goalIds,
 					},
 					{ onConflict: "user_id" },
 				)
 				.select();
 
 			if (prefError) throw prefError;
-
-			// TODO: mealType handling
 
 			if (
 				formData.userPreferenceTags.length > 0 &&
@@ -335,6 +340,7 @@ export default function OnboardingScreen() {
 			) {
 				const preferenceId = prefData[0].id;
 
+				// Delete existing preference tags
 				const { error: deleteError } = await supabase
 					.from("user_preference_tags")
 					.delete()
@@ -342,10 +348,32 @@ export default function OnboardingScreen() {
 
 				if (deleteError) throw deleteError;
 
-				const tagInserts = formData.userPreferenceTags.map((tagId) => ({
-					user_preference_id: preferenceId,
-					tag_id: tagId,
-				}));
+				const tagInserts = formData.userPreferenceTags.map(
+					(tag: UserPreferenceTag) => {
+						const baseInsert = {
+							user_preference_id: preferenceId,
+							tag_id: tag.tag_id,
+						};
+
+						// Check if this tag is a goal and add priority
+						const goalTags = tags.filter((tag) => tag.type === "goal");
+						const goalIndex = goalTags.findIndex(
+							(goalTag) => goalTag.id === tag.tag_id,
+						);
+
+						if (goalIndex !== -1) {
+							return {
+								...baseInsert,
+								priority: goalIndex + 1,
+							};
+						}
+
+						return {
+							...baseInsert,
+							priority: null,
+						};
+					},
+				);
 
 				const { error: insertError } = await supabase
 					.from("user_preference_tags")
@@ -353,7 +381,6 @@ export default function OnboardingScreen() {
 
 				if (insertError) throw insertError;
 			}
-
 		} catch (error) {
 			console.error("Error completing onboarding:", error);
 			setShowSuccess(false);
@@ -404,31 +431,72 @@ export default function OnboardingScreen() {
 		}).start();
 	}, [currentStep, progressWidth, steps.length]);
 
+	const handleExit = () => {
+		Alert.alert(
+			"Cancel Changes?",
+			"Are you sure you want to exit? Any unsaved changes will be lost.",
+			[
+				{
+					text: "Exit",
+					style: "destructive",
+					onPress: () => {
+						router.back();
+					},
+				},
+				{
+					text: "Stay",
+					style: "cancel",
+				},
+			],
+			{ cancelable: true },
+		);
+	};
+
 	const ProgressIndicator = () => {
+		const isEditMode = profile?.onboarding_completed === true;
+
 		return (
 			<View className="mt-16">
-				{/* Navigation and Skip Section */}
 				<View className="flex-row justify-between items-center">
-					{currentStep > 0 ? (
-						<TouchableOpacity
-							onPress={handlePrevious}
-							className="flex-row items-center bg-white/40 rounded-full px-4 py-2"
-							style={{
-								shadowColor: "#25551b",
-								shadowOffset: { width: 0, height: 1 },
-								shadowOpacity: 0.1,
-								shadowRadius: 2,
-								elevation: 2,
-							}}
-						>
-							<Ionicons name="chevron-back" size={18} color="#25551b" />
-							<Text className="text-primary text-sm ml-1 font-medium">
-								Back
-							</Text>
-						</TouchableOpacity>
-					) : (
-						<View />
-					)}
+					<View className="flex-row gap-2">
+						{currentStep > 0 && (
+							<TouchableOpacity
+								onPress={handlePrevious}
+								className="flex-row items-center bg-white/40 rounded-full px-4 py-2"
+								style={{
+									shadowColor: "#25551b",
+									shadowOffset: { width: 0, height: 1 },
+									shadowOpacity: 0.1,
+									shadowRadius: 2,
+									elevation: 2,
+								}}
+							>
+								<Ionicons name="chevron-back" size={18} color="#25551b" />
+								<Text className="text-primary text-sm ml-1 font-medium">
+									Back
+								</Text>
+							</TouchableOpacity>
+						)}
+
+						{isEditMode && (
+							<TouchableOpacity
+								onPress={handleExit}
+								className="flex-row items-center bg-red-100/80 rounded-full px-4 py-2"
+								style={{
+									shadowColor: "#25551b",
+									shadowOffset: { width: 0, height: 1 },
+									shadowOpacity: 0.1,
+									shadowRadius: 2,
+									elevation: 2,
+								}}
+							>
+								<Ionicons name="close" size={18} color="#dc2626" />
+								<Text className="text-red-600 text-sm ml-1 font-medium">
+									Cancel
+								</Text>
+							</TouchableOpacity>
+						)}
+					</View>
 
 					{currentStep < steps.length - 1 && (
 						<TouchableOpacity
@@ -451,7 +519,6 @@ export default function OnboardingScreen() {
 				</View>
 
 				<View className="relative mt-4">
-					{/* Background Track */}
 					<View
 						className="h-3 rounded-full bg-background/80"
 						style={{
@@ -460,7 +527,6 @@ export default function OnboardingScreen() {
 						}}
 					/>
 
-					{/* Animated Progress Fill */}
 					<Animated.View
 						className="absolute top-0 h-3 rounded-full"
 						style={{

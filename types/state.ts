@@ -27,13 +27,16 @@ export interface Unit {
     created_at?: string;
 }
 
+export interface UserPreferenceTag {
+    tag_id: string;
+    priority?: number;
+}
+
 export interface UserPreferences {
     id: string;
     user_id: string;
-    goal_ids: string[];
     meals_per_week: number;
     serves_per_meal: number;
-    meal_types: string[];
-    user_preference_tags?: string[];
+    user_preference_tags?: UserPreferenceTag[];
     created_at?: string;
 }
