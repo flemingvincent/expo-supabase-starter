@@ -178,6 +178,9 @@ const PreferencesStep = ({
                 <Text className="text-primary text-lg text-center px-4">
                     Tell us your preferences to find perfect recipes
                 </Text>
+                <Text className="text-primary/60 text-sm text-center px-4 mt-1">
+                    Select any and all that apply. We will tailor recommendations based on your selections.
+                </Text>
             </Animated.View>
 
             {/* Form Container matching PlanningStep style */}

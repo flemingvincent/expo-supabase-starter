@@ -109,7 +109,7 @@ const MealTypesStep = ({
 	};
 
 	return (
-		<SafeAreaView className="flex-1 bg-lightgreen" edges={["top", "bottom"]}>
+		<SafeAreaView className="flex-1 bg-lightgreen" edges={["top"]}>
 			<ScrollView
 				className="flex-1"
 				showsVerticalScrollIndicator={false}
