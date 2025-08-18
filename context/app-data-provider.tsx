@@ -8,19 +8,18 @@ import {
 import { supabase } from "@/config/supabase";
 import { useAuth } from "./supabase-provider";
 import { Tag, Ingredient, Equipment, Unit, UserPreferences } from "@/types/state";
-import { Recipe } from "@/types/recipe";
-
-export interface RecipeWithTags extends Recipe {
-	tagIds?: string[];
-}
+import { RecipeWithTags } from "@/types/recipe";
+import { WeekWithComputed } from "@/types/week";
 
 interface AppDataState {
 	tags: Tag[];
 	ingredients: Ingredient[];
 	equipment: Equipment[];
 	units: Unit[];
-	recipes: RecipeWithTags[]; // Add recipes
-	recommendedMeals: RecipeWithTags[]; // Subset of recipes based on user preferences
+	recipes: RecipeWithTags[];
+	recommendedMeals: RecipeWithTags[];
+	weeks: WeekWithComputed[]; // Add weeks
+	currentWeek: WeekWithComputed | null; // Quick access to current week
 	userPreferences: UserPreferences;
 	loading: boolean;
 	error: Error | null;
@@ -28,12 +27,17 @@ interface AppDataState {
 	refreshIngredients: () => Promise<void>;
 	refreshEquipment: () => Promise<void>;
 	refreshUnits: () => Promise<void>;
-	refreshRecipes: () => Promise<void>; // Add recipe refresh
+	refreshRecipes: () => Promise<void>;
 	refreshUserPreferences: () => Promise<void>;
+	refreshWeeks: () => Promise<void>; // Add weeks refresh
 	refreshAll: () => Promise<void>;
 	// Helper methods for meal recommendations
 	getRecommendedMeals: (limit?: number) => RecipeWithTags[];
 	refreshRecommendations: () => Promise<void>;
+	// Helper methods for weeks
+	getWeekById: (weekId: string) => WeekWithComputed | undefined;
+	getWeeksRange: (startOffset: number, endOffset: number) => WeekWithComputed[];
+	getUpcomingWeeks: (count: number) => WeekWithComputed[];
 }
 
 const AppDataContext = createContext<AppDataState>({
@@ -43,6 +47,8 @@ const AppDataContext = createContext<AppDataState>({
 	units: [],
 	recipes: [],
 	recommendedMeals: [],
+	weeks: [],
+	currentWeek: null,
 	userPreferences: {
 		id: "",
 		user_id: "",
@@ -57,9 +63,13 @@ const AppDataContext = createContext<AppDataState>({
 	refreshUnits: async () => {},
 	refreshRecipes: async () => {},
 	refreshUserPreferences: async () => {},
+	refreshWeeks: async () => {},
 	refreshAll: async () => {},
 	getRecommendedMeals: () => [],
 	refreshRecommendations: async () => {},
+	getWeekById: () => undefined,
+	getWeeksRange: () => [],
+	getUpcomingWeeks: () => [],
 });
 
 export const useAppData = () => useContext(AppDataContext);
@@ -71,6 +81,8 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 	const [units, setUnits] = useState<Unit[]>([]);
 	const [recipes, setRecipes] = useState<RecipeWithTags[]>([]);
 	const [recommendedMeals, setRecommendedMeals] = useState<RecipeWithTags[]>([]);
+	const [weeks, setWeeks] = useState<WeekWithComputed[]>([]);
+	const [currentWeek, setCurrentWeek] = useState<WeekWithComputed | null>(null);
 	const [userPreferences, setUserPreferences] = useState<UserPreferences>({
 		id: "",
 		user_id: "",
@@ -214,6 +226,85 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		}
 	};
 
+	const fetchWeeks = async () => {
+		try {
+			setLoading(true);
+			setError(null);
+
+			// Get current date for calculations
+			const today = new Date();
+			const todayStr = today.toISOString().split('T')[0];
+
+			// Fetch weeks around current date (e.g., 4 weeks back, 8 weeks forward)
+			const { data, error } = await supabase
+				.from("weeks")
+				.select("*")
+				.gte("end_date", new Date(today.getTime() - 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // 4 weeks ago
+				.lte("start_date", new Date(today.getTime() + 56 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // 8 weeks ahead
+				.order("start_date", { ascending: true });
+
+			if (error) {
+				throw new Error(error.message);
+			}
+
+			// Process weeks to add computed properties
+			const processedWeeks: WeekWithComputed[] = (data || []).map(week => {
+				// Calculate week offset from current week
+				const currentWeekData = data?.find(w => w.is_current_week);
+				let weekOffset = 0;
+				
+				if (currentWeekData) {
+					const currentStart = new Date(currentWeekData.start_date);
+					const thisStart = new Date(week.start_date);
+					weekOffset = Math.round((thisStart.getTime() - currentStart.getTime()) / (7 * 24 * 60 * 60 * 1000));
+				}
+
+				// Determine display title
+				let displayTitle = week.display_title || '';
+				if (!displayTitle) {
+					if (week.is_current_week) {
+						displayTitle = 'This week';
+					} else if (weekOffset === 1) {
+						displayTitle = 'Next week';
+					} else if (weekOffset === -1) {
+						displayTitle = 'Last week';
+					} else if (weekOffset > 1) {
+						displayTitle = `In ${weekOffset} weeks`;
+					} else if (weekOffset < -1) {
+						displayTitle = `${Math.abs(weekOffset)} weeks ago`;
+					}
+				}
+
+				// Determine status
+				let status: 'past' | 'current' | 'future' = 'future';
+				if (week.is_current_week) {
+					status = 'current';
+				} else if (new Date(week.end_date) < today) {
+					status = 'past';
+				}
+
+				return {
+					...week,
+					displayTitle,
+					weekOffset,
+					status
+				};
+			});
+
+			setWeeks(processedWeeks);
+			
+			// Set current week for quick access
+			const current = processedWeeks.find(w => w.is_current_week);
+			setCurrentWeek(current || null);
+
+		} catch (error) {
+			console.error("Error fetching weeks:", error);
+			setError(error instanceof Error ? error : new Error(String(error)));
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	const fetchUserPreferences = async () => {
 		try {
 			setLoading(true);
@@ -338,6 +429,10 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		await fetchRecipes();
 	};
 
+	const refreshWeeks = async () => {
+		await fetchWeeks();
+	};
+
 	const refreshUserPreferences = async () => {
 		await fetchUserPreferences();
 	};
@@ -353,6 +448,21 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		return recommendedMeals;
 	};
 
+	// Week helper methods
+	const getWeekById = (weekId: string): WeekWithComputed | undefined => {
+		return weeks.find(w => w.id === weekId);
+	};
+
+	const getWeeksRange = (startOffset: number, endOffset: number): WeekWithComputed[] => {
+		return weeks.filter(w => w.weekOffset >= startOffset && w.weekOffset <= endOffset);
+	};
+
+	const getUpcomingWeeks = (count: number): WeekWithComputed[] => {
+		return weeks
+			.filter(w => w.status === 'current' || w.status === 'future')
+			.slice(0, count);
+	};
+
 	// Convenience method to refresh all reference data at once
 	const refreshAll = async () => {
 		try {
@@ -364,7 +474,8 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				fetchIngredients(),
 				fetchEquipment(),
 				fetchUnits(),
-				fetchRecipes(), // Include recipes in the full refresh
+				fetchRecipes(),
+				fetchWeeks(), // Include weeks in the full refresh
 				fetchUserPreferences(),
 			]);
 		} catch (error) {
@@ -398,6 +509,8 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				units,
 				recipes,
 				recommendedMeals,
+				weeks,
+				currentWeek,
 				userPreferences,
 				loading,
 				error,
@@ -407,9 +520,13 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				refreshUnits,
 				refreshRecipes,
 				refreshUserPreferences,
+				refreshWeeks,
 				refreshAll,
 				getRecommendedMeals,
 				refreshRecommendations,
+				getWeekById,
+				getWeeksRange,
+				getUpcomingWeeks,
 			}}
 		>
 			{children}

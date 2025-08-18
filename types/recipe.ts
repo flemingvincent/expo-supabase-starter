@@ -11,6 +11,10 @@ export interface Recipe {
 	difficulty?: string;
 }
 
+export interface RecipeWithTags extends Recipe {
+	tagIds?: string[];
+}
+
 export interface Instruction {
     id: string;
     recipe_id: string;

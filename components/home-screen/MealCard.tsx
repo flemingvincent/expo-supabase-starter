@@ -2,8 +2,8 @@ import { View, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/ui/text";
 import { Image } from "@/components/image";
-import { Recipe } from "@/types/recipe";
-import { RecipeWithTags, useAppData } from "@/context/app-data-provider";
+import { Recipe, RecipeWithTags } from "@/types/recipe";
+import { useAppData } from "@/context/app-data-provider";
 import { getRecipeColorScheme } from "@/lib/colors";
 import * as Haptics from 'expo-haptics';
 
@@ -24,7 +24,6 @@ export const MealCard = ({
 	const colors = getRecipeColorScheme(recipe.tagIds, tags);
 
 	const handlePress = () => {
-		// Trigger haptic feedback
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 		onPress?.();
 	};
@@ -203,7 +202,6 @@ export const MealCard = ({
 									98% Match
 								</Text>
 							</View>
-
 						</View> */}
 					</View>
 				</View>

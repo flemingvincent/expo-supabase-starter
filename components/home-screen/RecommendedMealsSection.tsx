@@ -1,127 +1,79 @@
 import { View, ScrollView, TouchableOpacity } from "react-native";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "expo-router";
-import { supabase } from "@/config/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { Recipe } from "@/types/recipe";
 import { MealCard } from "./MealCard";
 import { usePressAnimation } from "@/hooks/onPressAnimation";
-import { RecipeWithTags, useAppData } from "@/context/app-data-provider";
-
-// Mock calendar data - generate weeks starting Monday and ending Sunday
-const generateMockCalendarWeeks = () => {
-	const weeks = [];
-	const today = new Date();
-
-	// Get current week's Monday
-	const currentMonday = new Date(today);
-	const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
-	const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // If Sunday, go back 6 days
-	currentMonday.setDate(today.getDate() - daysFromMonday);
-
-	// Generate 5 weeks: 2 previous, current, 2 next
-	for (let weekOffset = -2; weekOffset <= 2; weekOffset++) {
-		const weekStart = new Date(currentMonday);
-		weekStart.setDate(currentMonday.getDate() + weekOffset * 7);
-
-		const weekEnd = new Date(weekStart);
-		weekEnd.setDate(weekStart.getDate() + 6);
-
-		const monthNames = [
-			"Jan",
-			"Feb",
-			"Mar",
-			"Apr",
-			"May",
-			"Jun",
-			"Jul",
-			"Aug",
-			"Sep",
-			"Oct",
-			"Nov",
-			"Dec",
-		];
-
-		// Format week display - always include month names
-		const startMonth = monthNames[weekStart.getMonth()];
-		const endMonth = monthNames[weekEnd.getMonth()];
-		const startDate = weekStart.getDate();
-		const endDate = weekEnd.getDate();
-
-		const dateRange = `${startDate} ${startMonth} - ${endDate} ${endMonth}`;
-
-		// Check if this week contains today
-		const isCurrentWeek = weekOffset === 0;
-
-		// Generate title based on week offset
-		let title;
-		if (weekOffset < -1) {
-			title = `${Math.abs(weekOffset)} weeks ago`;
-		} else if (weekOffset === -1) {
-			title = "Last week";
-		} else if (weekOffset === 0) {
-			title = "This week";
-		} else if (weekOffset === 1) {
-			title = "Next week";
-		} else {
-			title = `${weekOffset} weeks ahead`;
-		}
-
-		weeks.push({
-			id: weekOffset.toString(),
-			weekStart: weekStart.toISOString(),
-			weekEnd: weekEnd.toISOString(),
-			displayRange: dateRange,
-			month: startMonth,
-			isCurrentWeek,
-			title: title,
-			hasMeals: Math.random() > 0.2, // Random mock data for which weeks have meals
-			mealCount: Math.floor(Math.random() * 8) + 2, // 2-9 meals per week
-		});
-	}
-
-	return weeks;
-};
+import { useAppData } from "@/context/app-data-provider";
 
 export const RecommendedMealsSection = () => {
 	const router = useRouter();
-	const [selectedWeek, setSelectedWeek] = useState<string>("0"); // Current week ID
-	const [calendarWeeks] = useState(generateMockCalendarWeeks());
 	const calendarScrollRef = useRef<ScrollView>(null);
 
-	// Use the context instead of local state
+	// Use the context for both weeks and meals
 	const {
 		recommendedMeals,
+		weeks,
+		currentWeek,
 		loading,
 		error,
 		getRecommendedMeals,
 		refreshRecommendations,
+		getWeekById,
+		getWeeksRange,
 	} = useAppData();
+
+	// Initialize with current week
+	const [selectedWeekId, setSelectedWeekId] = useState<string | null>(null);
+
+	// Set initial selected week to current week when it loads
+	useEffect(() => {
+		if (currentWeek && !selectedWeekId) {
+			setSelectedWeekId(currentWeek.id);
+		}
+	}, [currentWeek, selectedWeekId]);
+
+	// Get weeks to display (-1 to +2 weeks from current)
+	const displayWeeks = useMemo(() => {
+		return getWeeksRange(-1, 2);
+	}, [weeks, getWeeksRange]);
 
 	const buttonPress = usePressAnimation({
 		hapticStyle: "Medium",
 		pressDistance: 4,
 	});
 
-	// Handle meal press navigation
 	const handleMealPress = (meal: Recipe) => {
 		console.log("pressed meal:", meal.name);
 		router.push(`/recipe/${meal.id}`);
 	};
 
 	const handleWeekPress = useCallback((weekId: string) => {
-		setSelectedWeek(weekId);
+		setSelectedWeekId(weekId);
 		console.log("Selected week:", weekId);
 	}, []);
 
-	const displayMeals = getRecommendedMeals();
-	const selectedWeekData = calendarWeeks.find(
-		(week) => week.id === selectedWeek,
-	);
+	const handleSwapMeals = () => {
+		const selectedWeek = getWeekById(selectedWeekId!);
+		if (!selectedWeek) return;
 
-	// Create sticky calendar component
+		router.push({
+			pathname: '/meal-planner',
+			params: {
+				weekId: selectedWeek.id,
+				weekStart: selectedWeek.start_date,
+				weekEnd: selectedWeek.end_date,
+				displayRange: selectedWeek.display_range,
+			}
+		});
+	};
+
+	const displayMeals = getRecommendedMeals();
+	const selectedWeek = selectedWeekId ? getWeekById(selectedWeekId) : null;
+
 	const StickyCalendarSection = useMemo(
 		() => (
 			<View
@@ -144,33 +96,33 @@ export const RecommendedMealsSection = () => {
 					contentContainerStyle={{ paddingHorizontal: 12 }}
 				>
 					<View className="flex-row gap-3 py-1">
-						{calendarWeeks.map((week) => (
+						{displayWeeks.map((week) => (
 							<TouchableOpacity
 								key={week.id}
 								onPress={() => handleWeekPress(week.id)}
 								style={{
 									backgroundColor:
-										week.id === selectedWeek ? "#CCEA1F" : "#FFFFFF",
-									borderColor: week.id === selectedWeek ? "#25551b" : "#E2E2E2",
-									shadowColor: week.id === selectedWeek ? "#25551b" : "#E2E2E2",
+										week.id === selectedWeekId ? "#CCEA1F" : "#FFFFFF",
+									borderColor: week.id === selectedWeekId ? "#25551b" : "#E2E2E2",
+									shadowColor: week.id === selectedWeekId ? "#25551b" : "#E2E2E2",
 								}}
 								className="py-4 px-4 border-2 rounded-xl items-center min-w-[100px] shadow-[0px_2px_0px_0px] active:shadow-[0px_0px_0px_0px] active:translate-y-[2px]"
 							>
 								<Text
 									className="text-xs font-montserrat-bold mb-1"
 									style={{
-										color: week.id === selectedWeek ? "#25551b" : "#6B7280",
+										color: week.id === selectedWeekId ? "#25551b" : "#6B7280",
 									}}
 								>
-									{week.title}
+									{week.displayTitle}
 								</Text>
 								<Text
 									className="text-lg font-montserrat-semibold"
 									style={{
-										color: week.id === selectedWeek ? "#25551b" : "#374151",
+										color: week.id === selectedWeekId ? "#25551b" : "#374151",
 									}}
 								>
-									{week.displayRange}
+									{week.display_range}
 								</Text>
 							</TouchableOpacity>
 						))}
@@ -178,7 +130,7 @@ export const RecommendedMealsSection = () => {
 				</ScrollView>
 			</View>
 		),
-		[calendarWeeks, selectedWeek, handleWeekPress],
+		[displayWeeks, selectedWeekId, handleWeekPress],
 	);
 
 	// Enhanced loading state with sticky calendar
@@ -331,10 +283,8 @@ export const RecommendedMealsSection = () => {
 
 	return (
 		<View className="flex-1">
-			{/* Sticky Calendar at the top */}
 			{StickyCalendarSection}
 
-			{/* Scrollable Content underneath */}
 			<ScrollView
 				className="flex-1 bg-background"
 				contentContainerStyle={{ paddingTop: 110, paddingBottom: 20 }}
@@ -353,14 +303,14 @@ export const RecommendedMealsSection = () => {
 					<View className="flex-row items-center justify-between">
 						<View className="flex-1">
 							<Text className="text-xl uppercase font-montserrat-bold tracking-wide mb-1 text-gray-700">
-								{selectedWeekData?.isCurrentWeek
+								{selectedWeek?.is_current_week
 									? "Recommended for you"
-									: `Week ${selectedWeekData?.displayRange} meals`}
+									: `Week ${selectedWeek?.display_range} meals`}
 							</Text>
 							<Text className="text-md font-montserrat text-gray-500">
-								{selectedWeekData?.isCurrentWeek
+								{selectedWeek?.is_current_week
 									? `We picked ${recommendedMeals.length} meal${recommendedMeals.length > 1 ? "s" : ""} we think you'll love`
-									: `Meals from ${selectedWeekData?.displayRange}`}
+									: `Meals from ${selectedWeek?.display_range}`}
 							</Text>
 						</View>
 
@@ -409,9 +359,9 @@ export const RecommendedMealsSection = () => {
 							<Ionicons name="calendar-outline" size={32} color="#FFF" />
 						</View>
 						<Text className="text-[#6B8E23] text-xl font-montserrat-bold tracking-wide uppercase mb-2 text-center">
-							{selectedWeekData?.isCurrentWeek
+							{selectedWeek?.is_current_week
 								? "No meals this week"
-								: `No meals for week ${selectedWeekData?.displayRange}`}
+								: `No meals for week ${selectedWeek?.display_range}`}
 						</Text>
 						<Text className="text-[#6B8E23]/80 text-center font-montserrat-semibold">
 							Tap on a week above to plan meals or browse our recommendations
@@ -419,28 +369,51 @@ export const RecommendedMealsSection = () => {
 					</View>
 				)}
 
-				{/* Enhanced Action Buttons */}
-				<View className="px-4 flex-1 gap-4 mt-6">
-					<Button
-						variant="outline"
-						accessibilityRole="button"
-						accessibilityLabel="Change meals"
-						accessibilityHint="Proceed to change your meal preferences"
-						className="border-2"
-						{...buttonPress}
-					>
-						<Text className="uppercase">Swap meals</Text>
-					</Button>
-					<Button
-						variant="default"
-						accessibilityRole="button"
-						accessibilityLabel="Add ingredients to cart"
-						accessibilityHint="Add ingredients for the selected meals to your cart"
-						{...buttonPress}
-					>
-						<Text>Add ingredients to cart</Text>
-					</Button>
-				</View>
+				{/* Enhanced Action Buttons - conditional based on week */}
+				{selectedWeek && (
+					<View className="px-4 flex-1 gap-4 mt-6">
+						{/* Order Again button - only for past weeks */}
+						{selectedWeek.status === 'past' && (
+							<Button
+								variant="default"
+								accessibilityRole="button"
+								accessibilityLabel="Order again"
+								accessibilityHint="Order the same meals from this past week"
+								{...buttonPress}
+							>
+								<Text>Order Again</Text>
+							</Button>
+						)}
+						
+						{/* Swap meals button - only for current and future weeks */}
+						{selectedWeek.status !== 'past' && (
+							<Button
+								variant="outline"
+								accessibilityRole="button"
+								accessibilityLabel="Change meals"
+								accessibilityHint="Proceed to change your meal preferences"
+								className="border-2"
+								onPress={handleSwapMeals}
+								{...buttonPress}
+							>
+								<Text className="uppercase">Swap meals</Text>
+							</Button>
+						)}
+						
+						{/* Add to cart button - only for current week */}
+						{selectedWeek.is_current_week && (
+							<Button
+								variant="default"
+								accessibilityRole="button"
+								accessibilityLabel="Add ingredients to cart"
+								accessibilityHint="Add ingredients for the selected meals to your cart"
+								{...buttonPress}
+							>
+								<Text>Add ingredients to cart</Text>
+							</Button>
+						)}
+					</View>
+				)}
 			</ScrollView>
 		</View>
 	);
