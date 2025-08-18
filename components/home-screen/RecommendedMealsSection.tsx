@@ -13,7 +13,6 @@ export const RecommendedMealsSection = () => {
 	const router = useRouter();
 	const calendarScrollRef = useRef<ScrollView>(null);
 
-	// Use the context for both weeks and meals
 	const {
 		recommendedMeals,
 		weeks,
@@ -26,17 +25,14 @@ export const RecommendedMealsSection = () => {
 		getWeeksRange,
 	} = useAppData();
 
-	// Initialize with current week
 	const [selectedWeekId, setSelectedWeekId] = useState<string | null>(null);
 
-	// Set initial selected week to current week when it loads
 	useEffect(() => {
 		if (currentWeek && !selectedWeekId) {
 			setSelectedWeekId(currentWeek.id);
 		}
 	}, [currentWeek, selectedWeekId]);
 
-	// Get weeks to display (-1 to +2 weeks from current)
 	const displayWeeks = useMemo(() => {
 		return getWeeksRange(-1, 2);
 	}, [weeks, getWeeksRange]);
@@ -396,7 +392,7 @@ export const RecommendedMealsSection = () => {
 								onPress={handleSwapMeals}
 								{...buttonPress}
 							>
-								<Text className="uppercase">Swap meals</Text>
+								<Text className="uppercase">Change meals</Text>
 							</Button>
 						)}
 						

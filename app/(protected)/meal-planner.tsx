@@ -1,4 +1,3 @@
-// app/swap-meals.tsx
 import { View, ScrollView, TouchableOpacity, SafeAreaView } from "react-native";
 import { useState, useEffect } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -7,7 +6,7 @@ import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { useAppData } from "@/context/app-data-provider";
 import { usePressAnimation } from "@/hooks/onPressAnimation";
-import { Image } from "@/components/image";
+import { EditMealCard } from "@/components/home-screen/EditMealCard";
 
 export default function MealPlannerScreen() {
 	const router = useRouter();
@@ -49,6 +48,39 @@ export default function MealPlannerScreen() {
 		// TODO: Save changes to database
 		console.log("Saving changes for week:", weekId);
 		router.back();
+	};
+
+	const handleSwapMeal = (mealId: string) => {
+		// TODO: Implement meal swapping logic
+		console.log("Swapping meal:", mealId);
+		setHasChanges(true);
+	};
+
+	const handleRemoveMeal = (mealId: string) => {
+		setSelectedMeals(prev => prev.filter(meal => meal.id !== mealId));
+		setHasChanges(true);
+	};
+
+	const handleAddMeal = (recipe: any) => {
+		// Check if meal is already selected to prevent duplicates
+		if (selectedMeals.some(meal => meal.id === recipe.id)) {
+			return;
+		}
+		
+		// Add recipe with default servings of 1
+		setSelectedMeals(prev => [...prev, { ...recipe, servings: 1 }]);
+		setHasChanges(true);
+	};
+
+	const handleServingsChange = (mealId: string, servings: number) => {
+		setSelectedMeals(prev => 
+			prev.map(meal => 
+				meal.id === mealId 
+					? { ...meal, servings }
+					: meal
+			)
+		);
+		setHasChanges(true);
 	};
 	
 	if (loading) {
@@ -169,84 +201,13 @@ export default function MealPlannerScreen() {
 					{selectedMeals.length > 0 ? (
 						<View className="flex flex-col gap-2">
 							{selectedMeals.map((meal) => (
-								<View
+								<EditMealCard
 									key={meal.id}
-									style={{
-										backgroundColor: "#FFFFFF",
-										borderWidth: 2,
-										borderColor: "#EBEBEB",
-										borderBottomWidth: 4,
-										borderBottomColor: "#EBEBEB",
-									}}
-									className="rounded-xl overflow-hidden"
-								>
-									<View className="flex-row">
-										<View className="w-28 h-28 p-2">
-											<View 
-												className="w-full h-full rounded-lg overflow-hidden"
-												style={{
-													shadowColor: "#000000",
-													shadowOffset: { width: 0, height: 2 },
-													shadowOpacity: 0.1,
-													shadowRadius: 4,
-													elevation: 3,
-												}}
-											>
-												{meal.image_url && (
-													<Image
-														source={
-															typeof meal.image_url === "string"
-																? { uri: meal.image_url }
-																: meal.image_url
-														}
-														className="w-full h-full"
-														contentFit="cover"
-													/>
-												)}
-												{!meal.image_url && (
-													<View className="w-full h-full bg-gray-100 items-center justify-center">
-														<Ionicons name="restaurant-outline" size={32} color="#9CA3AF" />
-													</View>
-												)}
-											</View>
-										</View>
-										
-										{/* Content Section */}
-										<View className="flex-1 p-3 pr-2">
-											<View className="flex-row justify-between items-start">
-												<View className="flex-1">
-													<Text className="text-lg font-montserrat-semibold text-gray-900 mb-1" numberOfLines={2}>
-														{meal.name}
-													</Text>
-													<View className="flex-row items-center gap-3">
-														<View className="flex-row items-center gap-1">
-															<Ionicons name="time-outline" size={16} color="#6B7280" />
-															<Text className="text-base text-gray-600">
-																{(meal.prep_time || 0) + (meal.cook_time || 0)} min
-															</Text>
-														</View>
-													</View>
-												</View>
-												
-												{/* Action Buttons */}
-												{/* <View className="flex-col-reverse pl-2 gap-1">
-													<TouchableOpacity
-														className="bg-gray-100 p-2 rounded-lg"
-														{...buttonPress}
-													>
-														<Ionicons name="swap-horizontal" size={18} color="#374151" />
-													</TouchableOpacity>
-													<TouchableOpacity
-														className="bg-red-50 p-2 rounded-lg"
-														{...buttonPress}
-													>
-														<Ionicons name="close" size={18} color="#DC2626" />
-													</TouchableOpacity>
-												</View> */}
-											</View>
-										</View>
-									</View>
-								</View>
+									meal={meal}
+									showActions={true}
+									onSwap={handleSwapMeal}
+									onRemove={handleRemoveMeal}
+								/>
 							))}
 						</View>
 					) : (
@@ -268,42 +229,76 @@ export default function MealPlannerScreen() {
 				{/* Available Recipes Section */}
 				<View className="px-4 pb-6">
 					<Text className="text-lg font-montserrat-bold text-gray-900 mb-3">
-						Available Recipes
+						Available Recipes ({recipes.length})
 					</Text>
 					
-					{/* Placeholder for recipes grid */}
-					<View className="bg-gray-50 rounded-xl p-6 items-center">
-						<Text className="text-gray-600 font-montserrat-semibold">
-							Recipe selection coming soon
-						</Text>
-						<Text className="text-gray-500 text-sm mt-1 text-center">
-							{recipes.length} recipes available
-						</Text>
-					</View>
+					{recipes.length > 0 ? (
+						<View className="flex flex-col gap-2">
+							{recipes
+								.filter(recipe => !selectedMeals.some(meal => meal.id === recipe.id))
+								.map((recipe) => (
+								<TouchableOpacity
+									key={recipe.id}
+									onPress={() => handleAddMeal(recipe)}
+									{...buttonPress}
+								>
+									<EditMealCard
+										meal={recipe}
+										variant="compact"
+										showActions={false}
+										showAddButton={true}
+									/>
+								</TouchableOpacity>
+							))}
+							
+							{recipes.filter(recipe => !selectedMeals.some(meal => meal.id === recipe.id)).length === 0 && (
+								<View className="bg-gray-50 rounded-xl p-6 items-center">
+									<Ionicons name="checkmark-circle" size={48} color="#10B981" />
+									<Text className="text-gray-600 font-montserrat-semibold mt-3">
+										All recipes added!
+									</Text>
+									<Text className="text-gray-500 text-sm mt-1 text-center">
+										You've selected all available recipes for this week
+									</Text>
+								</View>
+							)}
+						</View>
+					) : (
+						<View className="bg-gray-50 rounded-xl p-6 items-center">
+							<Ionicons name="restaurant-outline" size={48} color="#9CA3AF" />
+							<Text className="text-gray-600 font-montserrat-semibold mt-3">
+								No recipes available
+							</Text>
+							<Text className="text-gray-500 text-sm mt-1 text-center">
+								Check back later for new recipes
+							</Text>
+						</View>
+					)}
 				</View>
 			</ScrollView>
-            <View className="bg-white border-t border-gray-200 px-4 py-3">
-                <View className="flex-row gap-3">
-                    <Button
-                        variant="outline"
-                        className="flex-1"
-                        onPress={handleBack}
-                        {...buttonPress}
-                    >
-                        <Text className="font-montserrat-semibold">Cancel</Text>
-                    </Button>
-                    <Button
-                        variant="default"
-                        className="flex-1"
-                        onPress={handleSaveChanges}
-                        {...buttonPress}
-                    >
-                        <Text className="font-montserrat-semibold">
-                            Save Changes
-                        </Text>
-                    </Button>
-                </View>
-            </View>
+			
+			<View className="bg-white border-t border-gray-200 px-4 py-3">
+				<View className="flex-row gap-3">
+					<Button
+						variant="outline"
+						className="flex-1"
+						onPress={handleBack}
+						{...buttonPress}
+					>
+						<Text className="font-montserrat-semibold">Cancel</Text>
+					</Button>
+					<Button
+						variant="default"
+						className="flex-1"
+						onPress={handleSaveChanges}
+						{...buttonPress}
+					>
+						<Text className="font-montserrat-semibold">
+							Save Changes
+						</Text>
+					</Button>
+				</View>
+			</View>
 		</SafeAreaView>
 	);
 }

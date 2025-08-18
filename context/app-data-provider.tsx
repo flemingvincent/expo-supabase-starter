@@ -371,14 +371,14 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		}
 	};
 
-	// Generate meal recommendations based on user preferences and available recipes
 	const generateRecommendations = (recipesToFilter: RecipeWithTags[] = recipes) => {
 		if (!recipesToFilter.length || !userPreferences.user_preference_tags?.length) {
-			// If no preferences set, just return a random selection
 			const shuffled = [...recipesToFilter].sort(() => 0.5 - Math.random());
-			setRecommendedMeals(shuffled.slice(0, Math.max(userPreferences.meals_per_week || 3, 20)));
+			setRecommendedMeals(shuffled.slice(0, userPreferences.meals_per_week ?? 4));
 			return;
 		}
+
+        // TODO: some weighted algorithm stuff here or as a edge function in supabase 
 
 		// Score recipes based on tag matches
 		const scoredRecipes = recipesToFilter.map(recipe => {
@@ -448,7 +448,6 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		return recommendedMeals;
 	};
 
-	// Week helper methods
 	const getWeekById = (weekId: string): WeekWithComputed | undefined => {
 		return weeks.find(w => w.id === weekId);
 	};
@@ -463,7 +462,6 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 			.slice(0, count);
 	};
 
-	// Convenience method to refresh all reference data at once
 	const refreshAll = async () => {
 		try {
 			setLoading(true);
@@ -475,7 +473,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				fetchEquipment(),
 				fetchUnits(),
 				fetchRecipes(),
-				fetchWeeks(), // Include weeks in the full refresh
+				fetchWeeks(),
 				fetchUserPreferences(),
 			]);
 		} catch (error) {
@@ -486,14 +484,12 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		}
 	};
 
-	// Initialize data when session is available
 	useEffect(() => {
 		if (session?.user?.id) {
 			refreshAll();
 		}
 	}, [session?.user?.id]);
 
-	// Regenerate recommendations when user preferences or recipes change
 	useEffect(() => {
 		if (recipes.length && userPreferences.id) {
 			generateRecommendations();

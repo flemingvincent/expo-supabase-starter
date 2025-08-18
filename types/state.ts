@@ -1,3 +1,5 @@
+import { RecipeWithTags } from "./recipe";
+
 export interface Tag {
     id: string;
     name: string;
@@ -39,4 +41,21 @@ export interface UserPreferences {
     serves_per_meal: number;
     user_preference_tags?: UserPreferenceTag[];
     created_at?: string;
+}
+
+export interface MealPlanItem {
+	id: string;
+	recipe: RecipeWithTags;
+	servings: number;
+	week_id?: string;
+	user_id?: string;
+	created_at?: string;
+}
+
+export interface WeekMealPlan {
+	week_id: string;
+	meals: MealPlanItem[];
+	total_meals: number;
+	created_at?: string;
+	updated_at?: string;
 }
