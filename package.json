@@ -1,66 +1,38 @@
 {
-	"name": "expo-supabase-starter",
-	"version": "1.0.0",
-	"main": "expo-router/entry",
-	"scripts": {
-		"start": "expo start",
-		"web": "expo start --web",
-		"android": "expo run:android",
-		"ios": "expo run:ios",
-		"lint": "eslint . --fix",
-		"generate-colors": "node ./scripts/generate-colors.js && eslint ./constants/colors.ts --fix"
-	},
-	"dependencies": {
-		"@hookform/resolvers": "^5.0.1",
-		"@react-native-async-storage/async-storage": "^2.1.2",
-		"@rn-primitives/label": "^1.1.0",
-		"@rn-primitives/radio-group": "^1.1.0",
-		"@rn-primitives/slot": "^1.1.0",
-		"@rn-primitives/switch": "^1.1.0",
-		"@rn-primitives/types": "^1.1.0",
-		"@supabase/supabase-js": "^2.49.4",
-		"class-variance-authority": "^0.7.1",
-		"clsx": "^2.1.1",
-		"expo": "~53.0.8",
-		"expo-constants": "~17.1.6",
-		"expo-dev-client": "~5.1.8",
-		"expo-image": "~2.1.7",
-		"expo-linking": "~7.1.4",
-		"expo-router": "~5.0.7",
-		"expo-splash-screen": "~0.30.10",
-		"expo-status-bar": "~2.2.3",
-		"expo-system-ui": "~5.0.7",
-		"nativewind": "^4.1.23",
-		"react": "19.0.0",
-		"react-dom": "19.0.0",
-		"react-hook-form": "^7.55.0",
-		"react-native": "0.79.2",
-		"react-native-gesture-handler": "~2.24.0",
-		"react-native-reanimated": "~3.17.3",
-		"react-native-safe-area-context": "5.4.0",
-		"react-native-screens": "~4.10.0",
-		"react-native-web": "^0.20.0",
-		"tailwind-merge": "^3.2.0",
-		"tailwindcss": "~3.4.17",
-		"zod": "^3.24.3"
-	},
-	"devDependencies": {
-		"@babel/core": "^7.20.0",
-		"@types/aes-js": "^3.1.4",
-		"@types/react": "~19.0.10",
-		"eslint": "^9.0.0",
-		"eslint-config-expo": "~9.2.0",
-		"eslint-config-prettier": "^10.1.2",
-		"eslint-plugin-prettier": "^5.2.6",
-		"prettier": "^3.5.3",
-		"typescript": "~5.8.3"
-	},
-	"expo": {
-		"install": {
-			"exclude": [
-				"@supabase/supabase-js"
-			]
-		}
-	},
-	"private": true
+  "name": "expo-supabase-starter",
+  "license": "MIT",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "lint": "expo lint"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@supabase/supabase-js": "^2.55.0",
+    "expo": "^54.0.0-preview.4",
+    "expo-constants": "~18.0.2",
+    "expo-dev-client": "~6.0.3",
+    "expo-linking": "~8.0.2",
+    "expo-router": "~6.0.0-beta.4",
+    "expo-splash-screen": "~31.0.3",
+    "expo-status-bar": "~3.0.3",
+    "react": "19.1.0",
+    "react-native": "0.81.0",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-screens": "~4.14.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@types/react": "~19.1.10",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~10.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
+    "typescript": "~5.9.2"
+  },
+  "private": true
 }

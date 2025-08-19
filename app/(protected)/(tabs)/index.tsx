@@ -1,26 +1,25 @@
-import { router } from "expo-router";
-import { View } from "react-native";
+import { Button, ScrollView } from "react-native";
 
-import { Button } from "@/components/ui/button";
-import { Text } from "@/components/ui/text";
-import { H1, Muted } from "@/components/ui/typography";
+import { useSupabase } from "@/hooks/useSupabase";
 
-export default function Home() {
-	return (
-		<View className="flex-1 items-center justify-center bg-background p-4 gap-y-4">
-			<H1 className="text-center">Home</H1>
-			<Muted className="text-center">
-				You are now authenticated and this session will persist even after
-				closing the app.
-			</Muted>
-			<Button
-				className="w-full"
-				variant="default"
-				size="default"
-				onPress={() => router.push("/(protected)/modal")}
-			>
-				<Text>Open Modal</Text>
-			</Button>
-		</View>
-	);
+export default function Page() {
+  const { signOut } = useSupabase();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (err) {
+      console.error(JSON.stringify(err, null, 2));
+    }
+  };
+
+  return (
+    <ScrollView
+      automaticallyAdjustsScrollIndicatorInsets
+      contentInsetAdjustmentBehavior="automatic"
+      contentInset={{ top: 39 }}
+    >
+      <Button title="Sign Out" onPress={handleSignOut} />
+    </ScrollView>
+  );
 }
