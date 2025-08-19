@@ -4,28 +4,31 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
-import { Recipe } from "@/types/recipe";
+import { MealPlanItem } from "@/types/state";
 import { MealCard } from "./MealCard";
 import { usePressAnimation } from "@/hooks/onPressAnimation";
 import { useAppData } from "@/context/app-data-provider";
 
-export const RecommendedMealsSection = () => {
+export const MealPlanSection = () => {
 	const router = useRouter();
 	const calendarScrollRef = useRef<ScrollView>(null);
 
 	const {
-		recommendedMeals,
+		currentMealPlan,
 		weeks,
 		currentWeek,
 		loading,
 		error,
-		getRecommendedMeals,
-		refreshRecommendations,
+		getCurrentMealPlan,
+		generateInitialMealPlan,
+		updateMealServings,
 		getWeekById,
 		getWeeksRange,
+		loadMealPlanForWeek,
 	} = useAppData();
 
 	const [selectedWeekId, setSelectedWeekId] = useState<string | null>(null);
+	const [isLoadingWeekPlan, setIsLoadingWeekPlan] = useState(false);
 
 	useEffect(() => {
 		if (currentWeek && !selectedWeekId) {
@@ -42,17 +45,27 @@ export const RecommendedMealsSection = () => {
 		pressDistance: 4,
 	});
 
-	const handleMealPress = (meal: Recipe) => {
-		console.log("pressed meal:", meal.name);
-		router.push(`/recipe/${meal.id}`);
+	const handleMealPress = (meal: MealPlanItem) => {
+		console.log("pressed meal:", meal.recipe.name);
+		router.push(`/recipe/${meal.recipe.id}`);
 	};
 
-	const handleWeekPress = useCallback((weekId: string) => {
+	const handleWeekPress = useCallback(async (weekId: string) => {
+		if (weekId === selectedWeekId) return;
+		
 		setSelectedWeekId(weekId);
-		console.log("Selected week:", weekId);
-	}, []);
+		setIsLoadingWeekPlan(true);
+		
+		try {
+			await loadMealPlanForWeek(weekId);
+		} catch (error) {
+			console.error("Error loading meal plan for week:", error);
+		} finally {
+			setIsLoadingWeekPlan(false);
+		}
+	}, [selectedWeekId, loadMealPlanForWeek]);
 
-	const handleSwapMeals = () => {
+	const handleEditMeals = () => {
 		const selectedWeek = getWeekById(selectedWeekId!);
 		if (!selectedWeek) return;
 
@@ -67,8 +80,17 @@ export const RecommendedMealsSection = () => {
 		});
 	};
 
-	const displayMeals = getRecommendedMeals();
+	const handleGenerateNewPlan = async () => {
+		try {
+			await generateInitialMealPlan();
+		} catch (error) {
+			console.error("Error generating new meal plan:", error);
+		}
+	};
+
+	const displayMeals = getCurrentMealPlan();
 	const selectedWeek = selectedWeekId ? getWeekById(selectedWeekId) : null;
+	const totalServings = displayMeals.reduce((sum, meal) => sum + meal.servings, 0);
 
 	const StickyCalendarSection = useMemo(
 		() => (
@@ -138,9 +160,9 @@ export const RecommendedMealsSection = () => {
 				{/* Content that scrolls underneath - with top padding for sticky header */}
 				<ScrollView
 					className="flex-1"
-					contentContainerStyle={{ paddingTop: 100 }} // Adjust based on calendar height
+					contentContainerStyle={{ paddingTop: 100 }}
 				>
-					{/* Toned Down Header */}
+					{/* Loading Header */}
 					<View
 						style={{
 							backgroundColor: "#F9FAFB",
@@ -151,10 +173,10 @@ export const RecommendedMealsSection = () => {
 						<View className="flex-row items-center justify-between">
 							<View className="flex-1">
 								<Text className="text-gray-500 text-sm font-montserrat-bold tracking-wide uppercase mb-1">
-									MEAL RECOMMENDATIONS
+									YOUR MEAL PLAN
 								</Text>
 								<Text className="text-gray-700 text-2xl font-montserrat-bold">
-									Curating your perfect meals
+									Loading your selected meals
 								</Text>
 							</View>
 							<View
@@ -163,7 +185,7 @@ export const RecommendedMealsSection = () => {
 								}}
 								className="w-12 h-12 rounded-xl items-center justify-center"
 							>
-								<Ionicons name="restaurant" size={24} color="#25551b" />
+								<Ionicons name="calendar" size={24} color="#25551b" />
 							</View>
 						</View>
 					</View>
@@ -206,7 +228,7 @@ export const RecommendedMealsSection = () => {
 										style={{ color: colors.text }}
 										className="font-montserrat-bold tracking-wide uppercase text-center"
 									>
-										FINDING PERFECT MEAL
+										LOADING MEAL PLAN
 									</Text>
 								</View>
 							);
@@ -225,7 +247,7 @@ export const RecommendedMealsSection = () => {
 
 				<ScrollView
 					className="flex-1"
-					contentContainerStyle={{ paddingTop: 100 }} // Adjust based on calendar height
+					contentContainerStyle={{ paddingTop: 100 }}
 				>
 					<View
 						style={{
@@ -244,7 +266,7 @@ export const RecommendedMealsSection = () => {
 									OOPS! SOMETHING WENT WRONG
 								</Text>
 								<Text className="text-[#FF6525] text-lg font-montserrat-bold tracking-wide uppercase">
-									Can't load your meals
+									Can't load your meal plan
 								</Text>
 							</View>
 						</View>
@@ -254,7 +276,7 @@ export const RecommendedMealsSection = () => {
 						</Text>
 
 						<Button
-							onPress={refreshRecommendations}
+							onPress={handleGenerateNewPlan}
 							variant="outline"
 							className="border-[#FF6525] bg-transparent"
 							{...buttonPress}
@@ -300,23 +322,32 @@ export const RecommendedMealsSection = () => {
 						<View className="flex-1">
 							<Text className="text-xl uppercase font-montserrat-bold tracking-wide mb-1 text-gray-700">
 								{selectedWeek?.is_current_week
-									? "Recommended for you"
-									: `Week ${selectedWeek?.display_range} meals`}
+									? "Your meal plan"
+									: `Week ${selectedWeek?.display_range} plan`}
 							</Text>
 							<Text className="text-md font-montserrat text-gray-500">
 								{selectedWeek?.is_current_week
-									? `We picked ${recommendedMeals.length} meal${recommendedMeals.length > 1 ? "s" : ""} we think you'll love`
-									: `Meals from ${selectedWeek?.display_range}`}
+									? `${displayMeals.length} meal${displayMeals.length !== 1 ? "s" : ""} selected • ${totalServings} total servings`
+									: `Meal plan for ${selectedWeek?.display_range}`}
 							</Text>
 						</View>
 
 						<View className="px-4 py-2 flex-row items-center justify-center gap-1 rounded-lg bg-lightgreen text-primary">
 							<Text className="text-sm font-montserrat-semibold text-primary">
-								78%
+								{displayMeals.length}
 							</Text>
-							<Ionicons name="flash" size={24} color="#25551b" />
+							<Ionicons name="restaurant" size={20} color="#25551b" />
 						</View>
 					</View>
+
+					{/* Loading indicator for week changes */}
+					{isLoadingWeekPlan && (
+						<View className="mt-3 pt-3 border-t border-gray-200">
+							<Text className="text-gray-500 text-sm text-center">
+								Loading meal plan...
+							</Text>
+						</View>
+					)}
 				</View>
 
 				{/* Meals Content */}
@@ -333,16 +364,19 @@ export const RecommendedMealsSection = () => {
 						snapToInterval={334}
 						snapToAlignment="start"
 					>
-						{displayMeals.map((meal: Recipe, index: number) => (
+						{displayMeals.map((meal: MealPlanItem, index: number) => (
 							<MealCard
 								key={meal.id}
 								recipe={meal}
 								onPress={() => handleMealPress(meal)}
+								onServingsChange={updateMealServings}
+								showServingsEditor={true}
+								weekStatus={selectedWeek?.status}
 							/>
 						))}
 					</ScrollView>
 				) : (
-					/* Enhanced empty state with calendar context */
+					/* Enhanced empty state */
 					<View
 						style={{
 							backgroundColor: "#EBF3E7",
@@ -356,48 +390,63 @@ export const RecommendedMealsSection = () => {
 						</View>
 						<Text className="text-[#6B8E23] text-xl font-montserrat-bold tracking-wide uppercase mb-2 text-center">
 							{selectedWeek?.is_current_week
-								? "No meals this week"
+								? "No meals planned"
 								: `No meals for week ${selectedWeek?.display_range}`}
 						</Text>
-						<Text className="text-[#6B8E23]/80 text-center font-montserrat-semibold">
-							Tap on a week above to plan meals or browse our recommendations
+						<Text className="text-[#6B8E23]/80 text-center font-montserrat-semibold mb-4">
+							{selectedWeek?.is_current_week
+								? "Let's create your first meal plan!"
+								: "Start planning meals for this week"}
 						</Text>
+						
+						{selectedWeek?.is_current_week && (
+							<Button
+								onPress={handleGenerateNewPlan}
+								variant="outline"
+								className="border-[#6B8E23] bg-transparent"
+								{...buttonPress}
+							>
+								<Text className="text-[#6B8E23] font-montserrat-semibold">
+									Generate Meal Plan
+								</Text>
+							</Button>
+						)}
 					</View>
 				)}
 
-				{/* Enhanced Action Buttons - conditional based on week */}
+				{/* Enhanced Action Buttons */}
 				{selectedWeek && (
 					<View className="px-4 flex-1 gap-4 mt-6">
-						{/* Order Again button - only for past weeks */}
+						{/* Edit meals button - for current and future weeks */}
+						{selectedWeek.status !== 'past' && (
+							<Button
+								variant="outline"
+								accessibilityRole="button"
+								accessibilityLabel="Edit meals"
+								accessibilityHint="Edit your meal plan and adjust servings"
+								className="border-2"
+								onPress={handleEditMeals}
+								{...buttonPress}
+							>
+                                <Text className="uppercase">Change meals</Text>
+							</Button>
+						)}
+						
+						{/* Order again button - only for past weeks */}
 						{selectedWeek.status === 'past' && (
 							<Button
 								variant="default"
 								accessibilityRole="button"
 								accessibilityLabel="Order again"
-								accessibilityHint="Order the same meals from this past week"
+								accessibilityHint="Reorder the same meals from this past week"
 								{...buttonPress}
 							>
-								<Text>Order Again</Text>
-							</Button>
-						)}
-						
-						{/* Swap meals button - only for current and future weeks */}
-						{selectedWeek.status !== 'past' && (
-							<Button
-								variant="outline"
-								accessibilityRole="button"
-								accessibilityLabel="Change meals"
-								accessibilityHint="Proceed to change your meal preferences"
-								className="border-2"
-								onPress={handleSwapMeals}
-								{...buttonPress}
-							>
-								<Text className="uppercase">Change meals</Text>
+                                <Text>Order Again</Text>
 							</Button>
 						)}
 						
 						{/* Add to cart button - only for current week */}
-						{selectedWeek.is_current_week && (
+						{selectedWeek.is_current_week && displayMeals.length > 0 && (
 							<Button
 								variant="default"
 								accessibilityRole="button"
@@ -405,7 +454,7 @@ export const RecommendedMealsSection = () => {
 								accessibilityHint="Add ingredients for the selected meals to your cart"
 								{...buttonPress}
 							>
-								<Text>Add ingredients to cart</Text>
+                                <Text>Add ingredients to cart</Text>
 							</Button>
 						)}
 					</View>

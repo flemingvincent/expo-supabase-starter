@@ -3,7 +3,7 @@ import { useAuth } from "@/context/supabase-provider";
 import { SafeAreaView } from "@/components/safe-area-view";
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/ui/text";
-import { RecommendedMealsSection } from "@/components/home-screen/RecommendedMealsSection";
+import { MealPlanSection } from "@/components/home-screen/MealPlan";
 
 export default function Home() {
 	const { profileLoading } = useAuth();
@@ -37,7 +37,7 @@ export default function Home() {
 
 	return (
 		<SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-			<RecommendedMealsSection/>
+			<MealPlanSection/>
 		</SafeAreaView>
 	);
 }

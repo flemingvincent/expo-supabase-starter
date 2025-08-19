@@ -7,7 +7,7 @@ import {
 } from "react";
 import { supabase } from "@/config/supabase";
 import { useAuth } from "./supabase-provider";
-import { Tag, Ingredient, Equipment, Unit, UserPreferences } from "@/types/state";
+import { Tag, Ingredient, Equipment, Unit, UserPreferences, MealPlanItem } from "@/types/state";
 import { RecipeWithTags } from "@/types/recipe";
 import { WeekWithComputed } from "@/types/week";
 
@@ -17,27 +17,44 @@ interface AppDataState {
 	equipment: Equipment[];
 	units: Unit[];
 	recipes: RecipeWithTags[];
-	recommendedMeals: RecipeWithTags[];
-	weeks: WeekWithComputed[]; // Add weeks
-	currentWeek: WeekWithComputed | null; // Quick access to current week
+	filteredRecipes: RecipeWithTags[];
+	currentMealPlan: MealPlanItem[];
+	weeks: WeekWithComputed[];
+	currentWeek: WeekWithComputed | null;
 	userPreferences: UserPreferences;
 	loading: boolean;
 	error: Error | null;
+	
+	// Data refresh methods
 	refreshTags: () => Promise<void>;
 	refreshIngredients: () => Promise<void>;
 	refreshEquipment: () => Promise<void>;
 	refreshUnits: () => Promise<void>;
 	refreshRecipes: () => Promise<void>;
 	refreshUserPreferences: () => Promise<void>;
-	refreshWeeks: () => Promise<void>; // Add weeks refresh
+	refreshWeeks: () => Promise<void>;
 	refreshAll: () => Promise<void>;
-	// Helper methods for meal recommendations
-	getRecommendedMeals: (limit?: number) => RecipeWithTags[];
-	refreshRecommendations: () => Promise<void>;
-	// Helper methods for weeks
+	
+	// Meal plan management methods
+	getCurrentMealPlan: (limit?: number) => MealPlanItem[];
+	generateInitialMealPlan: () => Promise<void>;
+	updateMealServings: (mealId: string, servings: number) => void;
+	addMealToPlan: (recipe: RecipeWithTags, servings?: number) => void;
+	removeMealFromPlan: (mealId: string) => void;
+	
+	// Recipe filtering
+	getAvailableRecipes: () => RecipeWithTags[];
+	refreshFilteredRecipes: () => void;
+	
+	// Week helper methods
 	getWeekById: (weekId: string) => WeekWithComputed | undefined;
 	getWeeksRange: (startOffset: number, endOffset: number) => WeekWithComputed[];
 	getUpcomingWeeks: (count: number) => WeekWithComputed[];
+	
+	// Meal plan persistence
+	saveMealPlanForWeek: (weekId: string, meals: MealPlanItem[]) => Promise<void>;
+	getMealPlanForWeek: (weekId: string) => Promise<MealPlanItem[]>;
+	loadMealPlanForWeek: (weekId: string) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataState>({
@@ -46,7 +63,8 @@ const AppDataContext = createContext<AppDataState>({
 	equipment: [],
 	units: [],
 	recipes: [],
-	recommendedMeals: [],
+	filteredRecipes: [],
+	currentMealPlan: [],
 	weeks: [],
 	currentWeek: null,
 	userPreferences: {
@@ -65,11 +83,19 @@ const AppDataContext = createContext<AppDataState>({
 	refreshUserPreferences: async () => {},
 	refreshWeeks: async () => {},
 	refreshAll: async () => {},
-	getRecommendedMeals: () => [],
-	refreshRecommendations: async () => {},
+	getCurrentMealPlan: () => [],
+	generateInitialMealPlan: async () => {},
+	updateMealServings: () => {},
+	addMealToPlan: () => {},
+	removeMealFromPlan: () => {},
+	getAvailableRecipes: () => [],
+	refreshFilteredRecipes: () => {},
 	getWeekById: () => undefined,
 	getWeeksRange: () => [],
 	getUpcomingWeeks: () => [],
+	saveMealPlanForWeek: async () => {},
+	getMealPlanForWeek: async () => [],
+	loadMealPlanForWeek: async () => {},
 });
 
 export const useAppData = () => useContext(AppDataContext);
@@ -80,7 +106,8 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 	const [equipment, setEquipment] = useState<Equipment[]>([]);
 	const [units, setUnits] = useState<Unit[]>([]);
 	const [recipes, setRecipes] = useState<RecipeWithTags[]>([]);
-	const [recommendedMeals, setRecommendedMeals] = useState<RecipeWithTags[]>([]);
+	const [filteredRecipes, setFilteredRecipes] = useState<RecipeWithTags[]>([]);
+	const [currentMealPlan, setCurrentMealPlan] = useState<MealPlanItem[]>([]);
 	const [weeks, setWeeks] = useState<WeekWithComputed[]>([]);
 	const [currentWeek, setCurrentWeek] = useState<WeekWithComputed | null>(null);
 	const [userPreferences, setUserPreferences] = useState<UserPreferences>({
@@ -94,6 +121,9 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<Error | null>(null);
 	const { session } = useAuth();
+
+	// Generate a unique ID for meal plan items
+	const generateMealId = () => `meal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 	const fetchTags = async () => {
 		try {
@@ -192,7 +222,6 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 			setLoading(true);
 			setError(null);
 
-			// Fetch all recipes with their associated tag_ids from the junction table
 			const { data: recipesData, error } = await supabase
 				.from("recipe")
 				.select(`
@@ -214,9 +243,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 			})) || [];
 
 			setRecipes(recipesWithTags);
-			
-			// Auto-refresh recommendations when recipes change
-			generateRecommendations(recipesWithTags);
+			filterRecipesByPreferences(recipesWithTags);
 
 		} catch (error) {
 			console.error("Error fetching recipes:", error);
@@ -247,9 +274,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				throw new Error(error.message);
 			}
 
-			// Process weeks to add computed properties
 			const processedWeeks: WeekWithComputed[] = (data || []).map(week => {
-				// Calculate week offset from current week
 				const currentWeekData = data?.find(w => w.is_current_week);
 				let weekOffset = 0;
 				
@@ -259,7 +284,6 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 					weekOffset = Math.round((thisStart.getTime() - currentStart.getTime()) / (7 * 24 * 60 * 60 * 1000));
 				}
 
-				// Determine display title
 				let displayTitle = week.display_title || '';
 				if (!displayTitle) {
 					if (week.is_current_week) {
@@ -293,7 +317,6 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 
 			setWeeks(processedWeeks);
 			
-			// Set current week for quick access
 			const current = processedWeeks.find(w => w.is_current_week);
 			setCurrentWeek(current || null);
 
@@ -310,7 +333,6 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 			setLoading(true);
 			setError(null);
 
-			// First get the user's preferences
 			const { data: prefData, error: prefError } = await supabase
 				.from("user_preferences")
 				.select("*")
@@ -318,7 +340,6 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				.single();
 
 			if (prefError) {
-				// If no preferences exist yet, this is not an error for a new user
 				if (prefError.code === 'PGRST116') {
 					setUserPreferences({
 						id: "",
@@ -333,7 +354,6 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 			}
 
 			if (prefData) {
-				// Then get associated tags from the junction table
                 const { data: tagData, error: tagError } = await supabase
                     .from("user_preference_tags")
                     .select("tag_id, priority")
@@ -350,11 +370,8 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				};
 
 				setUserPreferences(updatedPreferences);
-				
-				// Refresh recommendations when preferences change
-				generateRecommendations(recipes);
+				filterRecipesByPreferences(recipes);
 			} else {
-				// Default empty preferences
 				setUserPreferences({
 					id: "",
 					user_id: session?.user?.id || "",
@@ -371,41 +388,187 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		}
 	};
 
-	const generateRecommendations = (recipesToFilter: RecipeWithTags[] = recipes) => {
-		if (!recipesToFilter.length || !userPreferences.user_preference_tags?.length) {
-			const shuffled = [...recipesToFilter].sort(() => 0.5 - Math.random());
-			setRecommendedMeals(shuffled.slice(0, userPreferences.meals_per_week ?? 4));
+	const filterRecipesByPreferences = (recipesToFilter: RecipeWithTags[] = recipes) => {
+		if (!userPreferences.user_preference_tags?.length) {
+			setFilteredRecipes(recipesToFilter);
 			return;
 		}
 
-        // TODO: some weighted algorithm stuff here or as a edge function in supabase 
-
-		// Score recipes based on tag matches
-		const scoredRecipes = recipesToFilter.map(recipe => {
-			const matchingTags = recipe.tagIds?.filter(tagId => 
+		const filtered = recipesToFilter.filter(recipe => {
+			const hasMatchingTags = recipe.tagIds?.some(tagId => 
 				userPreferences.user_preference_tags?.find(tag => tag.tag_id === tagId)
-			) ?? [];
-			
-			const score = matchingTags.length;
-			
-			return {
-				...recipe,
-				score,
-				matchingTags
-			};
+			);
+			return hasMatchingTags;
 		});
 
-		// Sort by score (highest first) and add some randomness for variety
-		const sortedRecipes = scoredRecipes
-			.sort((a, b) => {
-				if (a.score === b.score) {
-					return Math.random() - 0.5; // Random for same score
-				}
-				return b.score - a.score;
-			})
-			.slice(0, userPreferences.meals_per_week ?? 4);
+		setFilteredRecipes(filtered);
+	};
 
-		setRecommendedMeals(sortedRecipes);
+	const generateInitialMealPlan = async (recipesToUse: RecipeWithTags[] = filteredRecipes) => {
+		if (!recipesToUse.length) {
+			setCurrentMealPlan([]);
+			return;
+		}
+
+		let scoredRecipes = recipesToUse;
+		
+		if (userPreferences.user_preference_tags?.length) {
+			scoredRecipes = recipesToUse.map(recipe => {
+				const matchingTags = recipe.tagIds?.filter(tagId => 
+					userPreferences.user_preference_tags?.find(tag => tag.tag_id === tagId)
+				) ?? [];
+				
+				const score = matchingTags.length;
+				
+				return {
+					...recipe,
+					score,
+					matchingTags
+				};
+			});
+
+			scoredRecipes = scoredRecipes.sort((a, b) => {
+				const scoreA = a.score ?? 0;
+				const scoreB = b.score ?? 0;
+				if (scoreA === scoreB) {
+					return Math.random() - 0.5;
+				}
+				return scoreB - scoreA;
+			});
+		} else {
+			scoredRecipes = [...recipesToUse].sort(() => 0.5 - Math.random());
+		}
+
+		const selectedRecipes = scoredRecipes.slice(0, userPreferences.meals_per_week ?? 4);
+
+		const mealPlanItems: MealPlanItem[] = selectedRecipes.map(recipe => ({
+			id: generateMealId(),
+			recipe,
+			servings: userPreferences.serves_per_meal || recipe.default_servings || 1,
+		}));
+
+		setCurrentMealPlan(mealPlanItems);
+	};
+
+	const updateMealServings = (mealId: string, servings: number) => {
+		setCurrentMealPlan(prev => 
+			prev.map(meal => 
+				meal.id === mealId 
+					? { ...meal, servings }
+					: meal
+			)
+		);
+	};
+
+	const addMealToPlan = (recipe: RecipeWithTags, servings?: number) => {
+		const existingMeal = currentMealPlan.find(meal => meal.recipe.id === recipe.id);
+		if (existingMeal) {
+			return;
+		}
+
+		const newMeal: MealPlanItem = {
+			id: generateMealId(),
+			recipe,
+			servings: servings || userPreferences.serves_per_meal || recipe.default_servings || 1,
+		};
+
+		setCurrentMealPlan(prev => [...prev, newMeal]);
+	};
+
+	const removeMealFromPlan = (mealId: string) => {
+		setCurrentMealPlan(prev => prev.filter(meal => meal.id !== mealId));
+	};
+
+	const getAvailableRecipes = (): RecipeWithTags[] => {
+		return filteredRecipes.filter(recipe => 
+			!currentMealPlan.some(meal => meal.recipe.id === recipe.id)
+		);
+	};
+
+	const saveMealPlanForWeek = async (weekId: string, meals: MealPlanItem[]) => {
+		try {
+			setLoading(true);
+			setError(null);
+
+			await supabase
+				.from("user_meal_plans")
+				.delete()
+				.eq("user_id", session?.user?.id)
+				.eq("week_id", weekId);
+
+			const mealPlanData = meals.map(meal => ({
+				user_id: session?.user?.id,
+				week_id: weekId,
+				recipe_id: meal.recipe.id,
+				servings: meal.servings,
+			}));
+
+			const { error } = await supabase
+				.from("user_meal_plans")
+				.insert(mealPlanData);
+
+			if (error) {
+				throw new Error(error.message);
+			}
+
+			console.log("Meal plan saved successfully for week:", weekId);
+		} catch (error) {
+			console.error("Error saving meal plan:", error);
+			setError(error instanceof Error ? error : new Error(String(error)));
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const getMealPlanForWeek = async (weekId: string): Promise<MealPlanItem[]> => {
+		try {
+			const { data, error } = await supabase
+				.from("user_meal_plans")
+				.select(`
+					*,
+					recipe:recipe_id (
+						*,
+						recipe_tags(tag_id)
+					)
+				`)
+				.eq("user_id", session?.user?.id)
+				.eq("week_id", weekId);
+
+			if (error) {
+				throw new Error(error.message);
+			}
+
+			const mealPlanItems: MealPlanItem[] = (data || []).map(item => ({
+				id: `saved_${item.id}`,
+				recipe: {
+					...item.recipe,
+					tagIds: item.recipe.recipe_tags?.map((rt: any) => rt.tag_id) || [],
+				},
+				servings: item.servings,
+				week_id: item.week_id,
+				user_id: item.user_id,
+				created_at: item.created_at,
+			}));
+
+			return mealPlanItems;
+		} catch (error) {
+			console.error("Error fetching meal plan:", error);
+			return [];
+		}
+	};
+
+	const loadMealPlanForWeek = async (weekId: string) => {
+		try {
+			const savedMeals = await getMealPlanForWeek(weekId);
+			if (savedMeals.length > 0) {
+				setCurrentMealPlan(savedMeals);
+			} else {
+				generateInitialMealPlan();
+			}
+		} catch (error) {
+			console.error("Error loading meal plan for week:", error);
+			generateInitialMealPlan();
+		}
 	};
 
 	// Public methods
@@ -437,15 +600,15 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		await fetchUserPreferences();
 	};
 
-	const refreshRecommendations = async () => {
-		generateRecommendations();
+	const refreshFilteredRecipes = () => {
+		filterRecipesByPreferences();
 	};
 
-	const getRecommendedMeals = (limit?: number): RecipeWithTags[] => {
+	const getCurrentMealPlan = (limit?: number): MealPlanItem[] => {
 		if (limit) {
-			return recommendedMeals.slice(0, limit);
+			return currentMealPlan.slice(0, limit);
 		}
-		return recommendedMeals;
+		return currentMealPlan;
 	};
 
 	const getWeekById = (weekId: string): WeekWithComputed | undefined => {
@@ -492,9 +655,15 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 
 	useEffect(() => {
 		if (recipes.length && userPreferences.id) {
-			generateRecommendations();
+			filterRecipesByPreferences();
 		}
 	}, [recipes, userPreferences]);
+
+	useEffect(() => {
+		if (filteredRecipes.length && userPreferences.id) {
+			generateInitialMealPlan();
+		}
+	}, [filteredRecipes, userPreferences]);
 
 	return (
 		<AppDataContext.Provider
@@ -504,7 +673,8 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				equipment,
 				units,
 				recipes,
-				recommendedMeals,
+				filteredRecipes,
+				currentMealPlan,
 				weeks,
 				currentWeek,
 				userPreferences,
@@ -518,11 +688,19 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				refreshUserPreferences,
 				refreshWeeks,
 				refreshAll,
-				getRecommendedMeals,
-				refreshRecommendations,
+				getCurrentMealPlan,
+				generateInitialMealPlan,
+				updateMealServings,
+				addMealToPlan,
+				removeMealFromPlan,
+				getAvailableRecipes,
+				refreshFilteredRecipes,
 				getWeekById,
 				getWeeksRange,
 				getUpcomingWeeks,
+				saveMealPlanForWeek,
+				getMealPlanForWeek,
+				loadMealPlanForWeek,
 			}}
 		>
 			{children}

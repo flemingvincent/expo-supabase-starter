@@ -4,15 +4,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/ui/text";
 import { usePressAnimation } from "@/hooks/onPressAnimation";
 import { Image } from "@/components/image";
+import { MealPlanItem } from "@/types/state";
 
 interface MealCardProps {
-	meal: {
-		id: string;
-		name: string;
-		image_url?: string | null;
-		prep_time?: number;
-		cook_time?: number;
-	};
+	meal: MealPlanItem;
 	onSwap?: (mealId: string) => void;
 	onRemove?: (mealId: string) => void;
 	showActions?: boolean;
@@ -24,16 +19,12 @@ export function EditMealCard({
 	meal,
 	onSwap,
 	onRemove,
-	showActions = false,
-	showAddButton = false,
 	variant = "default",
 }: MealCardProps) {
 	const buttonPress = usePressAnimation({
 		hapticStyle: "Medium",
 		pressDistance: 4,
 	});
-
-	const totalTime = (meal.prep_time || 0) + (meal.cook_time || 0);
 
 	return (
 		<View
@@ -63,12 +54,12 @@ export function EditMealCard({
 							elevation: 3,
 						}}
 					>
-						{meal.image_url ? (
+						{meal.recipe.image_url ? (
 							<Image
 								source={
-									typeof meal.image_url === "string"
-										? { uri: meal.image_url }
-										: meal.image_url
+									typeof meal.recipe.image_url === "string"
+										? { uri: meal.recipe.image_url }
+										: meal.recipe.image_url
 								}
 								className="w-full h-full"
 								contentFit="cover"
@@ -96,10 +87,10 @@ export function EditMealCard({
 								} text-gray-900`}
 								numberOfLines={variant === "compact" ? 1 : 2}
 							>
-								{meal.name}
+								{meal.recipe.name}
 							</Text>
 
-							{totalTime > 0 && (
+							{(meal.recipe.total_time ?? 0) > 0 && (
 								<View className="flex-row items-center gap-3">
 									<View className="flex-row items-center gap-1">
 										<Ionicons
@@ -112,47 +103,24 @@ export function EditMealCard({
 												variant === "compact" ? "text-sm" : "text-base"
 											} text-gray-600`}
 										>
-											{totalTime} min
+											{(meal.recipe.total_time ?? 0)} mins
 										</Text>
 									</View>
 								</View>
 							)}
 						</View>
 
-						{/* Action Buttons */}
-						{(showActions || showAddButton) && (
-							<View className="flex-col justify-center pl-2 gap-1">
-								{showAddButton && (
-									<View className="bg-green-50 p-2 rounded-lg">
-										<Ionicons name="add" size={18} color="#059669" />
-									</View>
-								)}
-
-								{showActions && onSwap && (
-									<TouchableOpacity
-										className="bg-gray-100 p-2 rounded-lg"
-										onPress={() => onSwap(meal.id)}
-										{...buttonPress}
-									>
-										<Ionicons
-											name="swap-horizontal"
-											size={18}
-											color="#374151"
-										/>
-									</TouchableOpacity>
-								)}
-
-								{showActions && onRemove && (
-									<TouchableOpacity
-										className="bg-red-50 p-2 rounded-lg"
-										onPress={() => onRemove(meal.id)}
-										{...buttonPress}
-									>
-										<Ionicons name="close" size={18} color="#DC2626" />
-									</TouchableOpacity>
-								)}
-							</View>
-						)}
+                        <View className="flex-col justify-center pl-2 gap-1">
+                            {onRemove && (
+                                <TouchableOpacity
+                                    className="bg-red-50 p-2 rounded-lg"
+                                    onPress={() => onRemove(meal.id)}
+                                    {...buttonPress}
+                                >
+                                    <Ionicons name="close" size={18} color="#DC2626" />
+                                </TouchableOpacity>
+                            )}
+                        </View>
 					</View>
 				</View>
 			</View>

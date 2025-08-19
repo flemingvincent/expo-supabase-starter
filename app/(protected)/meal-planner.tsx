@@ -14,8 +14,8 @@ export default function MealPlannerScreen() {
 	const { weekId, weekStart, weekEnd, displayRange } = params;
 	
 	const {
-		recommendedMeals,
-		recipes,
+		currentMealPlan,
+		filteredRecipes,
 		getWeekById,
 		loading,
 		error
@@ -27,13 +27,13 @@ export default function MealPlannerScreen() {
 	});
 	
 	const selectedWeek = weekId ? getWeekById(weekId as string) : null;
-	
-	const [selectedMeals, setSelectedMeals] = useState(recommendedMeals);
+
+	const [selectedMeals, setSelectedMeals] = useState(currentMealPlan);
 	const [hasChanges, setHasChanges] = useState(false);
 	
 	useEffect(() => {
-		setSelectedMeals(recommendedMeals);
-	}, [recommendedMeals]);
+		setSelectedMeals(currentMealPlan);
+	}, [currentMealPlan]);
 	
 	const handleBack = () => {
 		if (hasChanges) {
@@ -229,12 +229,12 @@ export default function MealPlannerScreen() {
 				{/* Available Recipes Section */}
 				<View className="px-4 pb-6">
 					<Text className="text-lg font-montserrat-bold text-gray-900 mb-3">
-						Available Recipes ({recipes.length})
+						Available Recipes ({filteredRecipes.length})
 					</Text>
 					
-					{recipes.length > 0 ? (
+					{filteredRecipes.length > 0 ? (
 						<View className="flex flex-col gap-2">
-							{recipes
+							{filteredRecipes
 								.filter(recipe => !selectedMeals.some(meal => meal.id === recipe.id))
 								.map((recipe) => (
 								<TouchableOpacity
@@ -242,16 +242,17 @@ export default function MealPlannerScreen() {
 									onPress={() => handleAddMeal(recipe)}
 									{...buttonPress}
 								>
-									<EditMealCard
+                                    {/* TODO: New card type here */}
+									{/* <EditMealCard
 										meal={recipe}
 										variant="compact"
 										showActions={false}
 										showAddButton={true}
-									/>
+									/> */}
 								</TouchableOpacity>
 							))}
 							
-							{recipes.filter(recipe => !selectedMeals.some(meal => meal.id === recipe.id)).length === 0 && (
+							{filteredRecipes.filter(recipe => !selectedMeals.some(meal => meal.id === recipe.id)).length === 0 && (
 								<View className="bg-gray-50 rounded-xl p-6 items-center">
 									<Ionicons name="checkmark-circle" size={48} color="#10B981" />
 									<Text className="text-gray-600 font-montserrat-semibold mt-3">

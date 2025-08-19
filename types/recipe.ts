@@ -13,6 +13,7 @@ export interface Recipe {
 
 export interface RecipeWithTags extends Recipe {
 	tagIds?: string[];
+    score?: number;
 }
 
 export interface Instruction {
