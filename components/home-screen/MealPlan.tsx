@@ -37,7 +37,7 @@ export const MealPlanSection = () => {
 	}, [currentWeek, selectedWeekId]);
 
 	const displayWeeks = useMemo(() => {
-		return getWeeksRange(-1, 2);
+		return getWeeksRange(0, 3);
 	}, [weeks, getWeeksRange]);
 
 	const buttonPress = usePressAnimation({
@@ -127,7 +127,7 @@ export const MealPlanSection = () => {
 								className="py-4 px-4 border-2 rounded-xl items-center min-w-[100px] shadow-[0px_2px_0px_0px] active:shadow-[0px_0px_0px_0px] active:translate-y-[2px]"
 							>
 								<Text
-									className="text-xs font-montserrat-bold mb-1"
+									className="text-sm font-montserrat-bold"
 									style={{
 										color: week.id === selectedWeekId ? "#25551b" : "#6B7280",
 									}}
@@ -432,19 +432,6 @@ export const MealPlanSection = () => {
 							</Button>
 						)}
 						
-						{/* Order again button - only for past weeks */}
-						{selectedWeek.status === 'past' && (
-							<Button
-								variant="default"
-								accessibilityRole="button"
-								accessibilityLabel="Order again"
-								accessibilityHint="Reorder the same meals from this past week"
-								{...buttonPress}
-							>
-                                <Text>Order Again</Text>
-							</Button>
-						)}
-						
 						{/* Add to cart button - only for current week */}
 						{selectedWeek.is_current_week && displayMeals.length > 0 && (
 							<Button
@@ -454,7 +441,7 @@ export const MealPlanSection = () => {
 								accessibilityHint="Add ingredients for the selected meals to your cart"
 								{...buttonPress}
 							>
-                                <Text>Add ingredients to cart</Text>
+                                <Text>Confirm</Text>
 							</Button>
 						)}
 					</View>

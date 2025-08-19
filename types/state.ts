@@ -47,9 +47,11 @@ export interface MealPlanItem {
 	id: string;
 	recipe: RecipeWithTags;
 	servings: number;
+    status?: 'draft' | 'confirmed' | 'completed';
 	week_id?: string;
 	user_id?: string;
 	created_at?: string;
+    updated_at?: string;
 }
 
 export interface WeekMealPlan {
