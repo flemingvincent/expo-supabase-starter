@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/ui/text";
 import { usePressAnimation } from "@/hooks/onPressAnimation";
 import { Image } from "@/components/image";
-import { MealPlanItem } from "@/types/state";
+import { MealPlanItem } from "@/types/database";
 
 interface MealCardProps {
 	meal: MealPlanItem;

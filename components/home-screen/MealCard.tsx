@@ -2,12 +2,11 @@ import { View, Pressable, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/ui/text";
 import { Image } from "@/components/image";
-import { Recipe, RecipeWithTags } from "@/types/recipe";
 import { useAppData } from "@/context/app-data-provider";
 import { getRecipeColorScheme } from "@/lib/colors";
 import { usePressAnimation } from "@/hooks/onPressAnimation";
 import * as Haptics from 'expo-haptics';
-import { MealPlanItem } from "@/types/state";
+import { MealPlanItem } from "@/types/database";
 
 interface MealCardProps {
 	recipe: MealPlanItem;
@@ -154,23 +153,6 @@ export const MealCard = ({
 					<View className={`flex-1 p-4 ${canEditServings ? 'pb-2' : ''}`}>
 						{/* Stats Pills - matching your detail page style */}
 						<View className="flex-row gap-2 mb-3">
-							<View
-								style={{
-									borderColor: colors.text,
-									backgroundColor: colors.background,
-									shadowColor: colors.text,
-								}}
-								className="flex-row items-center gap-1 px-2 py-1 border rounded-full shadow-[0px_1px_0px_0px]"
-							>
-								<Ionicons name="star" size={12} color={colors.text} />
-								<Text
-									style={{ color: colors.text }}
-									className="text-xs font-montserrat-bold"
-								>
-									{recipe.recipe.difficulty || "Easy"}
-								</Text>
-							</View>
-
 							{recipe.recipe.total_time && (
 								<View
 									style={{

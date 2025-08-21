@@ -1,3 +1,4 @@
+// components/onboarding/DietaryStep.tsx (PreferencesStep)
 import React, { useState, useEffect, useRef } from "react";
 import { View, TouchableOpacity, ScrollView, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -5,9 +6,10 @@ import Svg, { Text as SvgText } from "react-native-svg";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { usePressAnimation } from "@/hooks/onPressAnimation";
-import { supabase } from "@/config/supabase";
-import { FormData } from "@/types/onboarding";
 import { useAppData } from "@/context/app-data-provider";
+
+import { FormData } from "@/app/(protected)/onboarding";
+import type { Tag, TagType } from "@/types/database";
 
 interface PreferencesStepProps {
 	formData: FormData;
@@ -16,14 +18,17 @@ interface PreferencesStepProps {
 	isLoading: boolean;
 }
 
-const PreferencesStep = ({
+// Type for grouped tags
+type GroupedTags = Record<string, Tag[]>;
+
+const PreferencesStep: React.FC<PreferencesStepProps> = ({
 	formData,
 	handleFormChange,
 	onNext,
 	isLoading,
-}: PreferencesStepProps) => {
+}) => {
 	const { tags } = useAppData();
-	const [groupedTags, setGroupedTags] = useState<{ [key: string]: any[] }>({});
+	const [groupedTags, setGroupedTags] = useState<GroupedTags>({});
 
 	// Animation setup similar to other screens
 	const contentOpacity = useRef(new Animated.Value(0)).current;
@@ -80,17 +85,18 @@ const PreferencesStep = ({
 			clearTimeout(contentTimer);
 			clearTimeout(buttonTimer);
 		};
-	}, []);
+	}, [contentOpacity, contentTranslateY, buttonOpacity, buttonTranslateY]);
 
 	useEffect(() => {
-		// Filter out goal tags and group remaining tags by their type
-		const groups: { [key: string]: any[] } = {};
+		// Filter out goal and meal_type tags (handled in other steps) and group remaining tags by their type
+		const groups: GroupedTags = {};
 
 		tags.forEach((tag) => {
 			// Skip goals as they're handled in GoalsStep
-			if (tag.type === "goal") return;
+			// Skip meal_types as they're handled in MealTypesStep
+			if (tag.type === "goal" || tag.type === "meal_type") return;
 
-			const type = tag.type || "other";
+			const type = tag.type;
 			if (!groups[type]) {
 				groups[type] = [];
 			}
@@ -101,22 +107,25 @@ const PreferencesStep = ({
 	}, [tags]);
 
 	const toggleTag = (tagId: string) => {
-		let updatedPreferences;
-
-		const existingTagIndex = formData.userPreferenceTags.findIndex(
+		const currentUserPreferenceTags = formData.userPreferenceTags || [];
+		
+		const existingTagIndex = currentUserPreferenceTags.findIndex(
 			(tag) => tag.tag_id === tagId,
 		);
 
+		let updatedPreferences;
 		if (existingTagIndex !== -1) {
-			updatedPreferences = formData.userPreferenceTags.filter(
+			// Remove the tag
+			updatedPreferences = currentUserPreferenceTags.filter(
 				(tag) => tag.tag_id !== tagId,
 			);
 		} else {
+			// Add the tag (non-goal tags don't need priority)
 			updatedPreferences = [
-				...formData.userPreferenceTags,
+				...currentUserPreferenceTags,
 				{
 					tag_id: tagId,
-					priority: undefined,
+					priority: null,
 				},
 			];
 		}
@@ -125,49 +134,51 @@ const PreferencesStep = ({
 	};
 
 	// Helper function to get display name for tag types
-	const getTypeDisplayName = (type: string): string => {
-		switch (type) {
-			case "allergen":
-				return "Allergies & Intolerances";
-			case "diet":
-				return "Dietary Preferences";
-			case "budget":
-				return "Budget Preferences";
-			case "time":
-				return "Cooking Time";
-			case "macro":
-				return "Health / Macro Goals";
-			case "cuisine":
-				return "Cuisines";
-			case "meal_type":
-				return "Meal Types";
-			case "skill_level":
-				return "Recipe Difficulty";
-			case "method":
-				return "Cooking Methods";
-			case "equipment":
-				return "Kitchen Equipment";
-			default:
-				return type
-					.split("_")
-					.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-					.join(" ");
-		}
+	const getTypeDisplayName = (type: TagType | string): string => {
+		const typeDisplayNames: Record<string, string> = {
+			allergen: "Allergies & Intolerances",
+			diet: "Dietary Preferences",
+			budget: "Budget Preferences",
+			time: "Cooking Time",
+			macro: "Health / Macro Goals",
+			cuisine: "Cuisines",
+			skill_level: "Recipe Difficulty",
+			method: "Cooking Methods",
+			equipment: "Kitchen Equipment",
+			seasonal: "Seasonal Preferences",
+			occasion: "Occasions",
+			category: "Categories",
+			protein: "Protein Types",
+		};
+
+		return typeDisplayNames[type] || 
+			type.split("_")
+				.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+				.join(" ");
 	};
 
 	// Order of tag groups to display - prioritizing allergens, then dietary preferences
-	const typeOrder = [
+	const typeOrder: (TagType | string)[] = [
 		"allergen",
 		"diet",
 		"budget",
 		"time",
 		"macro",
 		"cuisine",
-		"meal_type",
 		"skill_level",
 		"method",
 		"equipment",
+		"seasonal",
+		"occasion",
+		"category",
+		"protein",
 	];
+
+	// Count total selected preferences (excluding goals and meal types)
+	const selectedCount = formData.userPreferenceTags.filter(pref => {
+		const tag = tags.find(t => t.id === pref.tag_id);
+		return tag && tag.type !== "goal" && tag.type !== "meal_type";
+	}).length;
 
 	return (
 		<ScrollView
@@ -208,6 +219,11 @@ const PreferencesStep = ({
 					Select any and all that apply. We will tailor recommendations based on
 					your selections.
 				</Text>
+				{selectedCount > 0 && (
+					<Text className="text-primary/60 text-sm text-center px-4 mt-1">
+						{selectedCount} preference{selectedCount !== 1 ? 's' : ''} selected
+					</Text>
+				)}
 			</Animated.View>
 
 			{/* Form Container matching PlanningStep style */}

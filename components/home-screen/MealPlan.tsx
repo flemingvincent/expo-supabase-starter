@@ -4,10 +4,10 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
-import { MealPlanItem } from "@/types/state";
 import { MealCard } from "./MealCard";
 import { usePressAnimation } from "@/hooks/onPressAnimation";
 import { useAppData } from "@/context/app-data-provider";
+import { MealPlanItem } from "@/types/database";
 
 export const MealPlanSection = () => {
 	const router = useRouter();

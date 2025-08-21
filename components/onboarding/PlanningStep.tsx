@@ -8,7 +8,8 @@ import { Text } from "@/components/ui/text";
 import { SafeAreaView } from "@/components/safe-area-view";
 import { usePressAnimation } from "@/hooks/onPressAnimation";
 import Counter from "./Counter";
-import { FormData } from "@/types/onboarding";
+
+import { FormData } from "@/app/(protected)/onboarding";
 
 interface PlanningStepProps {
 	formData: FormData;
@@ -17,12 +18,12 @@ interface PlanningStepProps {
 	isLoading: boolean;
 }
 
-const PlanningStep = ({
+const PlanningStep: React.FC<PlanningStepProps> = ({
 	formData,
 	handleFormChange,
 	onNext,
 	isLoading,
-}: PlanningStepProps) => {
+}) => {
 	// Animation setup similar to details screen
 	const contentOpacity = useRef(new Animated.Value(0)).current;
 	const contentTranslateY = useRef(new Animated.Value(20)).current;
@@ -72,7 +73,7 @@ const PlanningStep = ({
 			clearTimeout(contentTimer);
 			clearTimeout(buttonTimer);
 		};
-	}, []);
+	}, [contentOpacity, contentTranslateY, buttonOpacity, buttonTranslateY]);
 
 	const handleIncrementMeals = () => {
 		if (formData.mealsPerWeek < 20) {
@@ -97,6 +98,12 @@ const PlanningStep = ({
 			handleFormChange("servesPerMeal", formData.servesPerMeal - 1);
 		}
 	};
+
+	// Constants for min/max values
+	const MEALS_MIN = 1;
+	const MEALS_MAX = 20;
+	const SERVES_MIN = 1;
+	const SERVES_MAX = 12;
 
 	return (
 		<SafeAreaView className="flex-1 bg-lightgreen" edges={["top", "bottom"]}>
@@ -150,8 +157,8 @@ const PlanningStep = ({
 							value={formData.mealsPerWeek}
 							onIncrement={handleIncrementMeals}
 							onDecrement={handleDecrementMeals}
-							min={1}
-							max={20}
+							min={MEALS_MIN}
+							max={MEALS_MAX}
 						/>
 
 						<Counter
@@ -159,8 +166,8 @@ const PlanningStep = ({
 							value={formData.servesPerMeal}
 							onIncrement={handleIncrementServes}
 							onDecrement={handleDecrementServes}
-							min={1}
-							max={12}
+							min={SERVES_MIN}
+							max={SERVES_MAX}
 						/>
 
 						{/* Continue Button with animation and matching style */}

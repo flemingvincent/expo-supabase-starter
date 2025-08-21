@@ -7,9 +7,21 @@ import {
 } from "react";
 import { supabase } from "@/config/supabase";
 import { useAuth } from "./supabase-provider";
-import { Tag, Ingredient, Equipment, Unit, UserPreferences, MealPlanItem } from "@/types/state";
-import { RecipeWithTags } from "@/types/recipe";
-import { WeekWithComputed } from "@/types/week";
+
+import {
+	Recipe,
+	Tag,
+	UserMealPlan,
+	MealPlanWithRecipe,
+	RecipeWithTags,
+	MealPlanItem,
+	Ingredient,
+	Equipment,
+	Unit,
+	UserPreferences,
+	UserPreferencesWithTags,
+	WeekWithComputed,
+} from "@/types/database";
 
 interface AppDataState {
 	tags: Tag[];
@@ -21,10 +33,10 @@ interface AppDataState {
 	currentMealPlan: MealPlanItem[];
 	weeks: WeekWithComputed[];
 	currentWeek: WeekWithComputed | null;
-	userPreferences: UserPreferences;
+	userPreferences: UserPreferencesWithTags;
 	loading: boolean;
 	error: Error | null;
-	
+
 	// Data refresh methods
 	refreshTags: () => Promise<void>;
 	refreshIngredients: () => Promise<void>;
@@ -34,28 +46,35 @@ interface AppDataState {
 	refreshUserPreferences: () => Promise<void>;
 	refreshWeeks: () => Promise<void>;
 	refreshAll: () => Promise<void>;
-	
+
 	// Meal plan management methods
 	getCurrentMealPlan: (limit?: number) => MealPlanItem[];
 	generateInitialMealPlan: () => Promise<void>;
 	updateMealServings: (mealId: string, servings: number) => void;
 	addMealToPlan: (recipe: RecipeWithTags, servings?: number) => void;
 	removeMealFromPlan: (mealId: string) => void;
-	
+
 	// Recipe filtering
 	getAvailableRecipes: () => RecipeWithTags[];
 	refreshFilteredRecipes: () => void;
-	
+
 	// Week helper methods
 	getWeekById: (weekId: string) => WeekWithComputed | undefined;
 	getWeeksRange: (startOffset: number, endOffset: number) => WeekWithComputed[];
 	getUpcomingWeeks: (count: number) => WeekWithComputed[];
-	
+
 	// Meal plan persistence
-	saveMealPlanForWeek: (weekId: string, meals: MealPlanItem[], status?: 'draft' | 'confirmed' | 'completed') => Promise<void>;
+	saveMealPlanForWeek: (
+		weekId: string,
+		meals: MealPlanItem[],
+		status?: "draft" | "confirmed" | "completed",
+	) => Promise<void>;
 	getMealPlanForWeek: (weekId: string) => Promise<MealPlanItem[]>;
 	loadMealPlanForWeek: (weekId: string) => Promise<void>;
-	updateMealPlanStatus: (weekId: string, status: 'draft' | 'confirmed' | 'completed') => Promise<void>;
+	updateMealPlanStatus: (
+		weekId: string,
+		status: "draft" | "confirmed" | "completed",
+	) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataState>({
@@ -73,6 +92,8 @@ const AppDataContext = createContext<AppDataState>({
 		user_id: "",
 		meals_per_week: 1,
 		serves_per_meal: 1,
+		created_at: "",
+		user_preference_tags: [],
 	},
 	loading: false,
 	error: null,
@@ -97,7 +118,7 @@ const AppDataContext = createContext<AppDataState>({
 	saveMealPlanForWeek: async () => {},
 	getMealPlanForWeek: async () => [],
 	loadMealPlanForWeek: async () => {},
-    updateMealPlanStatus: async () => {},
+	updateMealPlanStatus: async () => {},
 });
 
 export const useAppData = () => useContext(AppDataContext);
@@ -112,20 +133,22 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 	const [currentMealPlan, setCurrentMealPlan] = useState<MealPlanItem[]>([]);
 	const [weeks, setWeeks] = useState<WeekWithComputed[]>([]);
 	const [currentWeek, setCurrentWeek] = useState<WeekWithComputed | null>(null);
-	const [userPreferences, setUserPreferences] = useState<UserPreferences>({
-		id: "",
-		user_id: "",
-		meals_per_week: 1,
-		serves_per_meal: 1,
-		user_preference_tags: [],
-		created_at: "",
-	});
+	const [userPreferences, setUserPreferences] =
+		useState<UserPreferencesWithTags>({
+			id: "",
+			user_id: "",
+			meals_per_week: 1,
+			serves_per_meal: 1,
+			user_preference_tags: [],
+			created_at: "",
+		});
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<Error | null>(null);
 	const { session } = useAuth();
 
 	// Generate a unique ID for meal plan items
-	const generateMealId = () => `meal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+	const generateMealId = () =>
+		`meal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 	const fetchTags = async () => {
 		try {
@@ -226,12 +249,14 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 
 			const { data: recipesData, error } = await supabase
 				.from("recipe")
-				.select(`
+				.select(
+					`
 					*,
 					recipe_tags(
 						tag_id
 					)
-				`)
+				`,
+				)
 				.order("created_at", { ascending: false });
 
 			if (error) {
@@ -239,14 +264,16 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 			}
 
 			// Transform the data to extract just the tag_ids
-			const recipesWithTags: RecipeWithTags[] = recipesData?.map((recipe) => ({
-				...recipe,
-				tagIds: recipe.recipe_tags?.map((rt: any) => rt.tag_id).filter(Boolean) || [],
-			})) || [];
+			const recipesWithTags: RecipeWithTags[] =
+				recipesData?.map((recipe) => ({
+					...recipe,
+					tagIds:
+						recipe.recipe_tags?.map((rt: any) => rt.tag_id).filter(Boolean) ||
+						[],
+				})) || [];
 
 			setRecipes(recipesWithTags);
 			filterRecipesByPreferences(recipesWithTags);
-
 		} catch (error) {
 			console.error("Error fetching recipes:", error);
 			setError(error instanceof Error ? error : new Error(String(error)));
@@ -262,38 +289,51 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 
 			// Get current date for calculations
 			const today = new Date();
-			const todayStr = today.toISOString().split('T')[0];
+			const todayStr = today.toISOString().split("T")[0];
 
 			// Fetch weeks around current date (e.g., 4 weeks back, 8 weeks forward)
 			const { data, error } = await supabase
 				.from("weeks")
 				.select("*")
-				.gte("end_date", new Date(today.getTime() - 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // 4 weeks ago
-				.lte("start_date", new Date(today.getTime() + 56 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // 8 weeks ahead
+				.gte(
+					"end_date",
+					new Date(today.getTime() - 28 * 24 * 60 * 60 * 1000)
+						.toISOString()
+						.split("T")[0],
+				) // 4 weeks ago
+				.lte(
+					"start_date",
+					new Date(today.getTime() + 56 * 24 * 60 * 60 * 1000)
+						.toISOString()
+						.split("T")[0],
+				) // 8 weeks ahead
 				.order("start_date", { ascending: true });
 
 			if (error) {
 				throw new Error(error.message);
 			}
 
-			const processedWeeks: WeekWithComputed[] = (data || []).map(week => {
-				const currentWeekData = data?.find(w => w.is_current_week);
+			const processedWeeks: WeekWithComputed[] = (data || []).map((week) => {
+				const currentWeekData = data?.find((w) => w.is_current_week);
 				let weekOffset = 0;
-				
+
 				if (currentWeekData) {
 					const currentStart = new Date(currentWeekData.start_date);
 					const thisStart = new Date(week.start_date);
-					weekOffset = Math.round((thisStart.getTime() - currentStart.getTime()) / (7 * 24 * 60 * 60 * 1000));
+					weekOffset = Math.round(
+						(thisStart.getTime() - currentStart.getTime()) /
+							(7 * 24 * 60 * 60 * 1000),
+					);
 				}
 
-				let displayTitle = week.display_title || '';
+				let displayTitle = week.display_title || "";
 				if (!displayTitle) {
 					if (week.is_current_week) {
-						displayTitle = 'This week';
+						displayTitle = "This week";
 					} else if (weekOffset === 1) {
-						displayTitle = 'Next week';
+						displayTitle = "Next week";
 					} else if (weekOffset === -1) {
-						displayTitle = 'Last week';
+						displayTitle = "Last week";
 					} else if (weekOffset > 1) {
 						displayTitle = `In ${weekOffset} weeks`;
 					} else if (weekOffset < -1) {
@@ -302,26 +342,25 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				}
 
 				// Determine status
-				let status: 'past' | 'current' | 'future' = 'future';
+				let status: "past" | "current" | "future" = "future";
 				if (week.is_current_week) {
-					status = 'current';
+					status = "current";
 				} else if (new Date(week.end_date) < today) {
-					status = 'past';
+					status = "past";
 				}
 
 				return {
 					...week,
 					displayTitle,
 					weekOffset,
-					status
+					status,
 				};
 			});
 
 			setWeeks(processedWeeks);
-			
-			const current = processedWeeks.find(w => w.is_current_week);
-			setCurrentWeek(current || null);
 
+			const current = processedWeeks.find((w) => w.is_current_week);
+			setCurrentWeek(current || null);
 		} catch (error) {
 			console.error("Error fetching weeks:", error);
 			setError(error instanceof Error ? error : new Error(String(error)));
@@ -338,17 +377,18 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 			const { data: prefData, error: prefError } = await supabase
 				.from("user_preferences")
 				.select("*")
-				.eq("user_id", session?.user?.id)
+				.eq("user_id", session?.user?.id!)
 				.single();
 
 			if (prefError) {
-				if (prefError.code === 'PGRST116') {
+				if (prefError.code === "PGRST116") {
 					setUserPreferences({
 						id: "",
 						user_id: session?.user?.id || "",
 						meals_per_week: 1,
 						serves_per_meal: 1,
 						user_preference_tags: [],
+						created_at: "",
 					});
 					return;
 				}
@@ -356,10 +396,10 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 			}
 
 			if (prefData) {
-                const { data: tagData, error: tagError } = await supabase
-                    .from("user_preference_tags")
-                    .select("tag_id, priority")
-                    .eq("user_preference_id", prefData.id);
+				const { data: tagData, error: tagError } = await supabase
+					.from("user_preference_tags")
+					.select("tag_id, priority")
+					.eq("user_preference_id", prefData.id);
 
 				if (tagError) {
 					throw new Error(tagError.message);
@@ -368,10 +408,11 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				// Combine the data
 				const updatedPreferences = {
 					...prefData,
-					user_preference_tags: tagData
+					user_preference_tags: tagData,
 				};
 
 				setUserPreferences(updatedPreferences);
+
 				filterRecipesByPreferences(recipes);
 			} else {
 				setUserPreferences({
@@ -380,6 +421,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 					meals_per_week: 1,
 					serves_per_meal: 1,
 					user_preference_tags: [],
+					created_at: "",
 				});
 			}
 		} catch (error) {
@@ -390,15 +432,19 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		}
 	};
 
-	const filterRecipesByPreferences = (recipesToFilter: RecipeWithTags[] = recipes) => {
+	const filterRecipesByPreferences = (
+		recipesToFilter: RecipeWithTags[] = recipes,
+	) => {
 		if (!userPreferences.user_preference_tags?.length) {
 			setFilteredRecipes(recipesToFilter);
 			return;
 		}
 
-		const filtered = recipesToFilter.filter(recipe => {
-			const hasMatchingTags = recipe.tagIds?.some(tagId => 
-				userPreferences.user_preference_tags?.find(tag => tag.tag_id === tagId)
+		const filtered = recipesToFilter.filter((recipe) => {
+			const hasMatchingTags = recipe.tagIds?.some((tagId) =>
+				userPreferences.user_preference_tags?.find(
+					(tag) => tag.tag_id === tagId,
+				),
 			);
 			return hasMatchingTags;
 		});
@@ -406,26 +452,31 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		setFilteredRecipes(filtered);
 	};
 
-	const generateInitialMealPlan = async (recipesToUse: RecipeWithTags[] = filteredRecipes) => {
+	const generateInitialMealPlan = async (
+		recipesToUse: RecipeWithTags[] = filteredRecipes,
+	) => {
 		if (!recipesToUse.length) {
 			setCurrentMealPlan([]);
 			return;
 		}
 
 		let scoredRecipes = recipesToUse;
-		
+
 		if (userPreferences.user_preference_tags?.length) {
-			scoredRecipes = recipesToUse.map(recipe => {
-				const matchingTags = recipe.tagIds?.filter(tagId => 
-					userPreferences.user_preference_tags?.find(tag => tag.tag_id === tagId)
-				) ?? [];
-				
+			scoredRecipes = recipesToUse.map((recipe) => {
+				const matchingTags =
+					recipe.tagIds?.filter((tagId) =>
+						userPreferences.user_preference_tags?.find(
+							(tag) => tag.tag_id === tagId,
+						),
+					) ?? [];
+
 				const score = matchingTags.length;
-				
+
 				return {
 					...recipe,
 					score,
-					matchingTags
+					matchingTags,
 				};
 			});
 
@@ -441,9 +492,12 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 			scoredRecipes = [...recipesToUse].sort(() => 0.5 - Math.random());
 		}
 
-		const selectedRecipes = scoredRecipes.slice(0, userPreferences.meals_per_week ?? 4);
+		const selectedRecipes = scoredRecipes.slice(
+			0,
+			userPreferences.meals_per_week ?? 4,
+		);
 
-		const mealPlanItems: MealPlanItem[] = selectedRecipes.map(recipe => ({
+		const mealPlanItems: MealPlanItem[] = selectedRecipes.map((recipe) => ({
 			id: generateMealId(),
 			recipe,
 			servings: userPreferences.serves_per_meal || recipe.default_servings || 1,
@@ -453,17 +507,15 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 	};
 
 	const updateMealServings = (mealId: string, servings: number) => {
-		setCurrentMealPlan(prev => 
-			prev.map(meal => 
-				meal.id === mealId 
-					? { ...meal, servings }
-					: meal
-			)
+		setCurrentMealPlan((prev) =>
+			prev.map((meal) => (meal.id === mealId ? { ...meal, servings } : meal)),
 		);
 	};
 
 	const addMealToPlan = (recipe: RecipeWithTags, servings?: number) => {
-		const existingMeal = currentMealPlan.find(meal => meal.recipe.id === recipe.id);
+		const existingMeal = currentMealPlan.find(
+			(meal) => meal.recipe.id === recipe.id,
+		);
 		if (existingMeal) {
 			return;
 		}
@@ -471,150 +523,163 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		const newMeal: MealPlanItem = {
 			id: generateMealId(),
 			recipe,
-			servings: servings || userPreferences.serves_per_meal || recipe.default_servings || 1,
+			servings:
+				servings ||
+				userPreferences.serves_per_meal ||
+				recipe.default_servings ||
+				1,
 		};
 
-		setCurrentMealPlan(prev => [...prev, newMeal]);
+		setCurrentMealPlan((prev) => [...prev, newMeal]);
 	};
 
 	const removeMealFromPlan = (mealId: string) => {
-		setCurrentMealPlan(prev => prev.filter(meal => meal.id !== mealId));
+		setCurrentMealPlan((prev) => prev.filter((meal) => meal.id !== mealId));
 	};
 
 	const getAvailableRecipes = (): RecipeWithTags[] => {
-		return filteredRecipes.filter(recipe => 
-			!currentMealPlan.some(meal => meal.recipe.id === recipe.id)
+		return filteredRecipes.filter(
+			(recipe) => !currentMealPlan.some((meal) => meal.recipe.id === recipe.id),
 		);
 	};
 
-	const saveMealPlanForWeek = async (weekId: string, meals: MealPlanItem[], status: 'draft' | 'confirmed' | 'completed' = 'draft') => {
-        try {
-            setLoading(true);
-            setError(null);
+	const saveMealPlanForWeek = async (
+		weekId: string,
+		meals: MealPlanItem[],
+		status: "draft" | "confirmed" | "completed" = "draft",
+	) => {
+		try {
+			setLoading(true);
+			setError(null);
 
-            // Use the replace_week_meal_plan RPC function for atomic operation
-            const mealsData = meals.map((meal, index) => ({
-                recipe_id: meal.recipe.id,
-                servings: meal.servings,
-                sort_order: index,
-                status: status,
-            }));
+			// Use the replace_week_meal_plan RPC function for atomic operation
+			const mealsData = meals.map((meal, index) => ({
+				recipe_id: meal.recipe.id,
+				servings: meal.servings,
+				sort_order: index,
+				status: status,
+			}));
 
-            const { data, error } = await supabase
-                .rpc('replace_week_meal_plan', {
-                    p_week_id: weekId,
-                    p_meals: mealsData,
-                    p_user_id: session?.user?.id
-                });
+			const { data, error } = await supabase.rpc("replace_week_meal_plan", {
+				p_week_id: weekId,
+				p_meals: mealsData,
+				p_user_id: session?.user?.id,
+			});
 
-            if (error) {
-                throw new Error(error.message);
-            }
+			if (error) {
+				throw new Error(error.message);
+			}
 
-            console.log("Meal plan saved successfully for week:", weekId);
-        } catch (error) {
-            console.error("Error saving meal plan:", error);
-            setError(error instanceof Error ? error : new Error(String(error)));
-            throw error; // Re-throw to handle in the calling component
-        } finally {
-            setLoading(false);
-        }
-    };
+			console.log("Meal plan saved successfully for week:", weekId);
+		} catch (error) {
+			console.error("Error saving meal plan:", error);
+			setError(error instanceof Error ? error : new Error(String(error)));
+			throw error; // Re-throw to handle in the calling component
+		} finally {
+			setLoading(false);
+		}
+	};
 
-    const updateMealPlanStatus = async (weekId: string, status: 'draft' | 'confirmed' | 'completed') => {
-        try {
-            setLoading(true);
-            setError(null);
+	const updateMealPlanStatus = async (
+		weekId: string,
+		status: "draft" | "confirmed" | "completed",
+	) => {
+		try {
+			setLoading(true);
+			setError(null);
 
-            const { data, error } = await supabase
-                .rpc('update_week_meal_plan_status', {
-                    p_week_id: weekId,
-                    p_status: status,
-                    p_user_id: session?.user?.id
-                });
+			const { data, error } = await supabase.rpc(
+				"update_week_meal_plan_status",
+				{
+					p_week_id: weekId,
+					p_status: status,
+					p_user_id: session?.user?.id,
+				},
+			);
 
-            if (error) {
-                throw new Error(error.message);
-            }
+			if (error) {
+				throw new Error(error.message);
+			}
 
-            console.log(`Meal plan status updated to ${status} for week:`, weekId);
-        } catch (error) {
-            console.error("Error updating meal plan status:", error);
-            setError(error instanceof Error ? error : new Error(String(error)));
-            throw error;
-        } finally {
-            setLoading(false);
-        }
-    };
+			console.log(`Meal plan status updated to ${status} for week:`, weekId);
+		} catch (error) {
+			console.error("Error updating meal plan status:", error);
+			setError(error instanceof Error ? error : new Error(String(error)));
+			throw error;
+		} finally {
+			setLoading(false);
+		}
+	};
 
-	const getMealPlanForWeek = async (weekId: string): Promise<MealPlanItem[]> => {
-        try {
-            // Use the get_week_meal_plan_with_recipes RPC function
-            const { data, error } = await supabase
-                .rpc('get_week_meal_plan_with_recipes', {
-                    p_week_id: weekId,
-                    p_user_id: session?.user?.id
-                });
+	const getMealPlanForWeek = async (
+		weekId: string,
+	): Promise<MealPlanItem[]> => {
+		try {
+			const { data, error } = await supabase.rpc(
+				"get_week_meal_plan_with_recipes",
+				{
+					p_week_id: weekId,
+					p_user_id: session?.user?.id,
+				},
+			);
 
-            if (error) {
-                throw new Error(error.message);
-            }
+			if (error) {
+				throw new Error(error.message);
+			}
 
-            if (!data || data.length === 0) {
-                return [];
-            }
+			if (!data || data.length === 0) {
+				return [];
+			}
 
-            // Map the meal plan data using recipes from state
-            const mealPlanItems: MealPlanItem[] = data.map((item: any) => {
-                // Find the full recipe from our existing recipes state
-                const fullRecipe = recipes.find(r => r.id === item.recipe_id);
-                
-                // If recipe is found in state, use it (with tags)
-                // Otherwise, create a minimal recipe from RPC data
-                const recipe: RecipeWithTags = fullRecipe || {
-                    id: item.recipe_id,
-                    name: item.recipe_name,
-                    image_url: item.recipe_image_url,
-                    total_time: item.recipe_total_time,
-                    difficulty: item.recipe_difficulty,
-                    tagIds: [], // Empty if not found in state
-                    // Add other default fields as needed
-                    created_at: '',
-                };
+			const mealPlanItems: MealPlanItem[] = data.map((item) => {
+				const fullRecipe = recipes.find((r) => r.id === item.recipe_id);
 
-                return {
-                    id: item.id,
-                    recipe: recipe,
-                    servings: item.servings,
-                    status: item.status,
-                    week_id: item.week_id,
-                    user_id: item.user_id,
-                    created_at: item.created_at,
-                    updated_at: item.updated_at,
-                };
-            });
+				const recipe: RecipeWithTags = fullRecipe || {
+					id: item.recipe_id,
+					name: item.recipe_name,
+					image_url: item.recipe_image_url,
+					total_time: item.recipe_total_time,
+					tagIds: [],
+					description: "",
+					prep_time: 0,
+					cook_time: 0,
+					default_servings: 1,
+					created_at: "",
+				};
 
-            return mealPlanItems;
-        } catch (error) {
-            console.error("Error fetching meal plan:", error);
-            return [];
-        }
-    };
+				return {
+					id: `saved_${item.id}`,
+					recipe: recipe,
+					servings: item.servings,
+					status: item.status as "draft" | "confirmed" | "completed",
+					week_id: item.week_id,
+					user_id: item.user_id,
+					created_at: item.created_at,
+					updated_at: item.updated_at,
+				};
+			});
+
+			return mealPlanItems;
+		} catch (error) {
+			console.error("Error fetching meal plan:", error);
+			return [];
+		}
+	};
 
 	const loadMealPlanForWeek = async (weekId: string) => {
-        try {
-            const savedMeals = await getMealPlanForWeek(weekId);
-            if (savedMeals.length > 0) {
-                setCurrentMealPlan(savedMeals);
-            } else {
-                // Generate initial plan if no saved plan exists
-                await generateInitialMealPlan();
-            }
-        } catch (error) {
-            console.error("Error loading meal plan for week:", error);
-            await generateInitialMealPlan();
-        }
-    };
+		try {
+			const savedMeals = await getMealPlanForWeek(weekId);
+			if (savedMeals.length > 0) {
+				setCurrentMealPlan(savedMeals);
+			} else {
+				// Generate initial plan if no saved plan exists
+				await generateInitialMealPlan();
+			}
+		} catch (error) {
+			console.error("Error loading meal plan for week:", error);
+			await generateInitialMealPlan();
+		}
+	};
 
 	// Public methods
 	const refreshTags = async () => {
@@ -657,16 +722,21 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 	};
 
 	const getWeekById = (weekId: string): WeekWithComputed | undefined => {
-		return weeks.find(w => w.id === weekId);
+		return weeks.find((w) => w.id === weekId);
 	};
 
-	const getWeeksRange = (startOffset: number, endOffset: number): WeekWithComputed[] => {
-		return weeks.filter(w => w.weekOffset >= startOffset && w.weekOffset <= endOffset);
+	const getWeeksRange = (
+		startOffset: number,
+		endOffset: number,
+	): WeekWithComputed[] => {
+		return weeks.filter(
+			(w) => w.weekOffset >= startOffset && w.weekOffset <= endOffset,
+		);
 	};
 
 	const getUpcomingWeeks = (count: number): WeekWithComputed[] => {
 		return weeks
-			.filter(w => w.status === 'current' || w.status === 'future')
+			.filter((w) => w.status === "current" || w.status === "future")
 			.slice(0, count);
 	};
 
@@ -674,7 +744,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		try {
 			setLoading(true);
 			setError(null);
-			
+
 			await Promise.all([
 				fetchTags(),
 				fetchIngredients(),

@@ -10,30 +10,19 @@ import { SplashScreen, useRouter } from "expo-router";
 import { useFonts } from "expo-font";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "@/config/supabase";
+import { Profile, ProfileUpdate } from "@/types/database";
 
 SplashScreen.preventAutoHideAsync();
-
-export interface UserProfile {
-	id: string;
-	display_name: string;
-	onboarding_completed: boolean;
-	admin: boolean;
-	country: string;
-	city: string;
-	post_code: number;
-	created_at?: string;
-	updated_at?: string;
-}
 
 type AuthState = {
 	initialized: boolean;
 	session: Session | null;
-	profile: UserProfile | null;
+	profile: Profile | null;
 	profileLoading: boolean;
 	signUp: (email: string, password: string) => Promise<void>;
 	signIn: (email: string, password: string) => Promise<void>;
 	signOut: () => Promise<void>;
-	updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+	updateProfile: (updates: Partial<Profile>) => Promise<void>;
 	refreshProfile: () => Promise<void>;
 };
 
@@ -54,7 +43,7 @@ export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({ children }: PropsWithChildren) {
 	const [initialized, setInitialized] = useState(false);
 	const [session, setSession] = useState<Session | null>(null);
-	const [profile, setProfile] = useState<UserProfile | null>(null);
+	const [profile, setProfile] = useState<Profile | null>(null);
 	const [profileLoading, setProfileLoading] = useState(false);
 	const router = useRouter();
 	
@@ -155,7 +144,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 		}
 	};
 
-	const updateProfile = async (updates: Partial<UserProfile>) => {
+	const updateProfile = async (updates: Partial<ProfileUpdate>) => {
 		if (!session?.user?.id || !profile) {
 			throw new Error("No user or profile found");
 		}

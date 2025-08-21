@@ -15,12 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { SafeAreaView } from "@/components/safe-area-view";
 import { usePressAnimation } from "@/hooks/onPressAnimation";
-import { supabase } from "@/config/supabase";
-import { FormData } from "@/types/onboarding";
 import { useAppData } from "@/context/app-data-provider";
 import * as Haptics from 'expo-haptics';
-import { useAuth } from "@/context/supabase-provider";
-import { UserPreferenceTag } from "@/types/state";
+
+import { FormData } from "@/app/(protected)/onboarding";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -40,12 +38,12 @@ interface DraggableGoal {
     priority: number;
 }
 
-const GoalsStep = ({
+const GoalsStep: React.FC<GoalsStepProps> = ({
     formData,
     handleFormChange,
     onNext,
     isLoading
-}: GoalsStepProps) => {
+}) => {
     const [orderedGoals, setOrderedGoals] = useState<DraggableGoal[]>([]);
     const [animatingIndex, setAnimatingIndex] = useState<number | null>(null);
     const [hasUserInteracted, setHasUserInteracted] = useState(false);
@@ -104,30 +102,32 @@ const GoalsStep = ({
             clearTimeout(contentTimer);
             clearTimeout(buttonTimer);
         };
-    }, []);
+    }, [contentOpacity, contentTranslateY, buttonOpacity, buttonTranslateY]);
 
     // Initialize ordered goals from tags
     useEffect(() => {
         const userPreferenceTags = formData.userPreferenceTags || [];
         const goalTags = tags.filter((tag) => tag.type === "goal");
 
-        const userGoalTags = userPreferenceTags.filter((tag) => goalTags.some(g => g.id === tag.tag_id));
+        const userGoalTags = userPreferenceTags.filter((tag) => 
+            goalTags.some(g => g.id === tag.tag_id)
+        );
 
         if (userGoalTags && userGoalTags.length > 0) {
-            const orderedTags = userGoalTags.map((tag, index) => {
-                const goalTag = goalTags.find(t => t.id === tag.tag_id);
-
-                return goalTag ? {
-                    id: goalTag.id,
-                    name: goalTag.name,
-                    priority: tag.priority ?? index + 1,
-                } : null;
-            }).filter(Boolean) as DraggableGoal[];
+            const orderedTags = userGoalTags
+                .map((tag, index) => {
+                    const goalTag = goalTags.find(t => t.id === tag.tag_id);
+                    return goalTag ? {
+                        id: goalTag.id,
+                        name: goalTag.name,
+                        priority: tag.priority ?? index + 1,
+                    } : null;
+                })
+                .filter((item): item is DraggableGoal => item !== null);
 
             setOrderedGoals(orderedTags);
             setHasUserInteracted(true);
         } else {
-
             const initialOrderedGoals = goalTags.map((tag, index) => ({
                 id: tag.id,
                 name: tag.name,
@@ -145,7 +145,7 @@ const GoalsStep = ({
             buttonScales[`${tag.id}-up`] = new Animated.Value(1);
             buttonScales[`${tag.id}-down`] = new Animated.Value(1);
         });
-    }, [tags]);
+    }, [tags, formData.userPreferenceTags, cardAnimations, buttonScales]);
 
     useEffect(() => {
         orderedGoals.forEach((goal) => {
@@ -153,10 +153,10 @@ const GoalsStep = ({
                 cardAnimations[goal.id] = new Animated.Value(1);
             }
 
-            buttonScales[`${goal.id}-up`] = new Animated.Value(1);
-            buttonScales[`${goal.id}-down`] = new Animated.Value(1);
+            buttonScales[`${goal.id}-up`] = buttonScales[`${goal.id}-up`] || new Animated.Value(1);
+            buttonScales[`${goal.id}-down`] = buttonScales[`${goal.id}-down`] || new Animated.Value(1);
         });
-    }, [orderedGoals]);
+    }, [orderedGoals, cardAnimations, buttonScales]);
 
     const animateButtonPress = (goalId: string, direction: 'up' | 'down') => {
         const scaleValue = buttonScales[`${goalId}-${direction}`];
@@ -260,7 +260,7 @@ const GoalsStep = ({
         
         animateButtonPress(currentGoal.id, 'down');
         setAnimatingIndex(index);
-        setHasUserInteracted(true); // Mark that user has interacted
+        setHasUserInteracted(true);
         
         animateCardSwap(currentGoal.id, nextGoal.id, () => {
             const newGoals = [...orderedGoals];
@@ -278,31 +278,54 @@ const GoalsStep = ({
     };
 
     const handleContinue = () => {
+        // Get non-goal tags from existing preferences
         const nonGoalTags = formData.userPreferenceTags.filter(tag => {
             const goalTags = tags.filter(t => t.type === "goal");
             return !goalTags.some(g => g.id === tag.tag_id);
         });
 
-        const updatedGoalTags: UserPreferenceTag[] = orderedGoals.map((goal, index) => ({
+        // Create updated goal tags with new priorities
+        const updatedGoalTags = orderedGoals.map((goal, index) => ({
             tag_id: goal.id,
             priority: index + 1
         }));
 
+        // Combine non-goal tags with updated goal tags
         const allTags = [...nonGoalTags, ...updatedGoalTags];
 
         handleFormChange('userPreferenceTags', allTags);
-
         onNext();
     };
 
     const renderGoalItem = (goal: DraggableGoal, index: number) => {
         const isFirst = index === 0;
         const isLast = index === orderedGoals.length - 1;
-        const isAnimating = animatingIndex === index || animatingIndex === index - 1 || animatingIndex === index + 1;
+        const isAnimating = animatingIndex === index || 
+                           animatingIndex === index - 1 || 
+                           animatingIndex === index + 1;
 
         const cardScale = cardAnimations[goal.id] || new Animated.Value(1);
         const upButtonScale = buttonScales[`${goal.id}-up`] || new Animated.Value(1);
         const downButtonScale = buttonScales[`${goal.id}-down`] || new Animated.Value(1);
+
+        // Priority colors based on position
+        const getPriorityColor = (idx: number): string => {
+            switch(idx) {
+                case 0: return '#25551b';
+                case 1: return '#25551bAA';
+                case 2: return '#25551b77';
+                default: return '#25551b44';
+            }
+        };
+
+        const getPriorityLabel = (idx: number): string => {
+            switch(idx) {
+                case 0: return "Highest Priority";
+                case 1: return "High Priority";
+                case 2: return "Medium Priority";
+                default: return "";
+            }
+        };
 
         return (
             <Animated.View
@@ -327,15 +350,10 @@ const GoalsStep = ({
                         elevation: index === 0 ? 4 : 2,
                     }}
                 >
-                    {/* Priority indicator bar - gradient based on position */}
+                    {/* Priority indicator bar */}
                     <View 
                         className="w-1.5 h-full"
-                        style={{
-                            backgroundColor: index === 0 ? '#25551b' : 
-                                           index === 1 ? '#25551bAA' : 
-                                           index === 2 ? '#25551b77' :
-                                           '#25551b44'
-                        }}
+                        style={{ backgroundColor: getPriorityColor(index) }}
                     />
                     
                     {/* Goal content */}
@@ -343,12 +361,7 @@ const GoalsStep = ({
                         <View className="flex-row items-center flex-1">
                             <View 
                                 className="w-9 h-9 rounded-full items-center justify-center mr-3"
-                                style={{
-                                    backgroundColor: index === 0 ? '#25551b' : 
-                                                   index === 1 ? '#25551bAA' : 
-                                                   index === 2 ? '#25551b77' :
-                                                   '#25551b44'
-                                }}
+                                style={{ backgroundColor: getPriorityColor(index) }}
                             >
                                 <Text className="text-white font-bold text-base">
                                     {index + 1}
@@ -360,15 +373,13 @@ const GoalsStep = ({
                                 </Text>
                                 {index < 3 && (
                                     <Text className="text-xs text-primary/50 mt-0.5">
-                                        {index === 0 ? "Highest Priority" : 
-                                         index === 1 ? "High Priority" : 
-                                         "Medium Priority"}
+                                        {getPriorityLabel(index)}
                                     </Text>
                                 )}
                             </View>
                         </View>
                         
-                        {/* Arrow control buttons - more prominent */}
+                        {/* Arrow control buttons */}
                         <View className="flex-row items-center gap-1">
                             <Animated.View style={{ transform: [{ scale: upButtonScale }] }}>
                                 <TouchableOpacity
@@ -446,7 +457,6 @@ const GoalsStep = ({
                     }}
                     className="items-center mt-8 mb-8"
                 >
-                    {/* SVG Title matching signup style */}
                     <Svg width="280" height="60">
                         <SvgText
                             x="140"
@@ -471,7 +481,7 @@ const GoalsStep = ({
                     </Text>
                 </Animated.View>
 
-                {/* Form Container matching signup style */}
+                {/* Form Container */}
                 <Animated.View
                     style={{
                         opacity: contentOpacity,
@@ -493,7 +503,7 @@ const GoalsStep = ({
                             {orderedGoals.map((goal, index) => renderGoalItem(goal, index))}
                         </View>
 
-                        {/* Continue Button with animation and matching style */}
+                        {/* Continue Button */}
                         <Animated.View
                             style={{
                                 opacity: buttonOpacity,

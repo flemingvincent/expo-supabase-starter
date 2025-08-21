@@ -16,10 +16,9 @@ import { supabase } from "@/config/supabase";
 import { SafeAreaView } from "@/components/safe-area-view";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
-import { RecipeWithTags, useAppData } from "@/context/app-data-provider";
-import { Ingredient } from "@/types/state";
+import { useAppData } from "@/context/app-data-provider";
 import { getRecipeColorScheme } from "@/lib/colors";
-import { Instruction, RecipeIngredient } from "@/types/recipe";
+import { Instruction, RecipeIngredient, RecipeWithTags } from "@/types/database";
 
 const { width: screenWidth } = Dimensions.get("window");
 

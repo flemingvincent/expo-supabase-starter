@@ -7,7 +7,8 @@
 		"web": "expo start --web",
 		"android": "expo run:android",
 		"ios": "expo run:ios",
-		"lint": "eslint . --fix"
+		"lint": "eslint . --fix",
+        "types:generate": "supabase gen types typescript --linked > ./types/supabase.ts"
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^5.0.1",
@@ -56,6 +57,7 @@
 		"eslint-config-prettier": "^10.1.2",
 		"eslint-plugin-prettier": "^5.2.6",
 		"prettier": "^3.5.3",
+		"supabase": "^2.34.3",
 		"typescript": "~5.8.3"
 	},
 	"expo": {
@@ -67,3 +69,5 @@
 	},
 	"private": true
 }
+
+

@@ -1,5 +1,5 @@
 // components/onboarding/MealTypesStep.tsx
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { View, TouchableOpacity, ScrollView, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Text as SvgText } from "react-native-svg";
@@ -7,7 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { SafeAreaView } from "@/components/safe-area-view";
 import { usePressAnimation } from "@/hooks/onPressAnimation";
-import { FormData } from "@/types/onboarding";
+import { useAppData } from "@/context/app-data-provider";
+
+import { FormData } from "@/app/(protected)/onboarding";
+import type { Tag } from "@/types/database";
 
 interface MealTypesStepProps {
 	formData: FormData;
@@ -16,12 +19,15 @@ interface MealTypesStepProps {
 	isLoading: boolean;
 }
 
-const MealTypesStep = ({
+const MealTypesStep: React.FC<MealTypesStepProps> = ({
 	formData,
 	handleFormChange,
 	onNext,
 	isLoading,
-}: MealTypesStepProps) => {
+}) => {
+	const { tags } = useAppData();
+	const [mealTypeTags, setMealTypeTags] = useState<Tag[]>([]);
+	
 	// Animation setup similar to other screens
 	const contentOpacity = useRef(new Animated.Value(0)).current;
 	const contentTranslateY = useRef(new Animated.Value(20)).current;
@@ -40,15 +46,12 @@ const MealTypesStep = ({
 		pressDistance: 2,
 	});
 
-	// Available meal types
-	const mealTypes = [
-		"Quick & Easy",
-		"Budget friendly",
-		"High-Protein",
-		"Family-Friendly",
-		"Low-Carb",
-		"Vegetarian",
-	];
+	// Get meal type tags from the database
+	useEffect(() => {
+		// Filter tags to get only meal_type tags
+		const filteredMealTypeTags = tags.filter(tag => tag.type === "meal_type");
+		setMealTypeTags(filteredMealTypeTags);
+	}, [tags]);
 
 	useEffect(() => {
 		// Content entrance animation
@@ -87,26 +90,40 @@ const MealTypesStep = ({
 			clearTimeout(contentTimer);
 			clearTimeout(buttonTimer);
 		};
-	}, []);
+	}, [contentOpacity, contentTranslateY, buttonOpacity, buttonTranslateY]);
 
-	const toggleMealType = (mealType: string) => {
-		// Assuming formData has a mealTypes field - you'll need to add this to your FormData interface
-		const currentMealTypes = formData.mealTypes || [];
-		let updatedMealTypes;
+	const toggleMealType = (mealTypeTag: Tag) => {
+		const currentUserPreferenceTags = formData.userPreferenceTags || [];
+		
+		// Check if this tag is already selected
+		const isCurrentlySelected = currentUserPreferenceTags.some(
+			pref => pref.tag_id === mealTypeTag.id
+		);
 
-		if (currentMealTypes.includes(mealType)) {
-			updatedMealTypes = currentMealTypes.filter((type) => type !== mealType);
+		let updatedTags;
+		if (isCurrentlySelected) {
+			// Remove the tag
+			updatedTags = currentUserPreferenceTags.filter(
+				pref => pref.tag_id !== mealTypeTag.id
+			);
 		} else {
-			updatedMealTypes = [...currentMealTypes, mealType];
+			// Add the tag (meal types don't need priority)
+			updatedTags = [
+				...currentUserPreferenceTags,
+				{ tag_id: mealTypeTag.id, priority: null }
+			];
 		}
 
-		handleFormChange("mealTypes", updatedMealTypes);
+		handleFormChange("userPreferenceTags", updatedTags);
 	};
 
-	const isSelected = (mealType: string) => {
-		const currentMealTypes = formData.mealTypes || [];
-		return currentMealTypes.includes(mealType);
+	const isSelected = (mealTypeTag: Tag): boolean => {
+		const currentUserPreferenceTags = formData.userPreferenceTags || [];
+		return currentUserPreferenceTags.some(pref => pref.tag_id === mealTypeTag.id);
 	};
+
+	// Count selected meal types for display
+	const selectedCount = mealTypeTags.filter(tag => isSelected(tag)).length;
 
 	return (
 		<SafeAreaView className="flex-1 bg-lightgreen" edges={["top"]}>
@@ -144,6 +161,11 @@ const MealTypesStep = ({
 					<Text className="text-primary text-lg text-center px-4">
 						What type of meals fit your household?
 					</Text>
+					{selectedCount > 0 && (
+						<Text className="text-primary/60 text-sm text-center px-4 mt-1">
+							{selectedCount} selected
+						</Text>
+					)}
 				</Animated.View>
 
 				{/* Form Container matching signup style */}
@@ -161,42 +183,50 @@ const MealTypesStep = ({
 								Choose all that apply
 							</Text>
 
-							<View className="gap-3">
-								{mealTypes.map((mealType, index) => (
-									<TouchableOpacity
-										key={index}
-										onPress={() => toggleMealType(mealType)}
-										className={`w-full p-4 rounded-xl border-2 ${
-											isSelected(mealType)
-												? "bg-primary/10 border-primary"
-												: "bg-white/90 border-primary/20"
-										}`}
-										accessibilityRole="button"
-										accessibilityLabel={`${isSelected(mealType) ? "Remove" : "Add"} ${mealType} meal type`}
-										accessibilityHint={`Toggle ${mealType} as a meal type preference`}
-										accessibilityState={{ selected: isSelected(mealType) }}
-										{...mealTypePress}
-									>
-										<View className="flex-row items-center justify-between">
-											<Text
-												className={`text-lg font-medium ${
-													isSelected(mealType)
-														? "text-primary"
-														: "text-primary/80"
-												}`}
-											>
-												{mealType}
-											</Text>
+							{mealTypeTags.length > 0 ? (
+								<View className="gap-3">
+									{mealTypeTags.map((mealTypeTag) => (
+										<TouchableOpacity
+											key={mealTypeTag.id}
+											onPress={() => toggleMealType(mealTypeTag)}
+											className={`w-full p-4 rounded-xl border-2 ${
+												isSelected(mealTypeTag)
+													? "bg-primary/10 border-primary"
+													: "bg-white/90 border-primary/20"
+											}`}
+											accessibilityRole="button"
+											accessibilityLabel={`${isSelected(mealTypeTag) ? "Remove" : "Add"} ${mealTypeTag.name} meal type`}
+											accessibilityHint={`Toggle ${mealTypeTag.name} as a meal type preference`}
+											accessibilityState={{ selected: isSelected(mealTypeTag) }}
+											{...mealTypePress}
+										>
+											<View className="flex-row items-center justify-between">
+												<Text
+													className={`text-lg font-medium ${
+														isSelected(mealTypeTag)
+															? "text-primary"
+															: "text-primary/80"
+													}`}
+												>
+													{mealTypeTag.name}
+												</Text>
 
-											{isSelected(mealType) && (
-												<View className="w-6 h-6 rounded-full bg-primary items-center justify-center">
-													<Ionicons name="checkmark" size={16} color="#fff" />
-												</View>
-											)}
-										</View>
-									</TouchableOpacity>
-								))}
-							</View>
+												{isSelected(mealTypeTag) && (
+													<View className="w-6 h-6 rounded-full bg-primary items-center justify-center">
+														<Ionicons name="checkmark" size={16} color="#fff" />
+													</View>
+												)}
+											</View>
+										</TouchableOpacity>
+									))}
+								</View>
+							) : (
+								<View className="p-4 bg-white/50 rounded-xl">
+									<Text className="text-primary/60 text-center">
+										Loading meal types...
+									</Text>
+								</View>
+							)}
 						</View>
 
 						{/* Continue Button with animation and matching style */}
@@ -211,20 +241,20 @@ const MealTypesStep = ({
 								size="lg"
 								variant="default"
 								onPress={onNext}
-								disabled={isLoading}
+								disabled={isLoading || mealTypeTags.length === 0}
 								className="w-full"
 								accessibilityRole="button"
 								accessibilityLabel="Continue to next step"
 								accessibilityHint="Proceed to the dietary preferences step of onboarding"
 								accessibilityState={{
-									disabled: isLoading,
+									disabled: isLoading || mealTypeTags.length === 0,
 									busy: isLoading,
 								}}
 								{...buttonPress}
 							>
 								<View className="flex-row items-center justify-center">
 									<Text className="text-primary text-xl mr-2 font-semibold">
-										{isLoading ? "Saving..." : "Continue"}
+										{isLoading ? "Saving..." : selectedCount === 0 ? "Skip" : "Continue"}
 									</Text>
 									<Ionicons name="arrow-forward" size={20} color="#25551b" />
 								</View>

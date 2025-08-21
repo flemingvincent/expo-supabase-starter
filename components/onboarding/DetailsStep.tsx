@@ -11,29 +11,43 @@ import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { Form, FormField, FormInput } from "@/components/ui/form";
 import { SafeAreaView } from "@/components/safe-area-view";
-import { FormData } from "@/types/onboarding";
 import { usePressAnimation } from "@/hooks/onPressAnimation";
 
+import { FormData } from "@/app/(protected)/onboarding";
+
+// Define the form schema with validation
 const formSchema = z.object({
-	name: z.string().min(1, "Please enter your name.").max(50, "Name must be less than 50 characters."),
-	country: z.string().min(1, "Please enter your country.").max(50, "Country must be less than 50 characters."),
-	city: z.string().min(1, "Please enter your city.").max(50, "City must be less than 50 characters."),
-	postcode: z.string().min(1, "Please enter your postcode.").max(10, "Postcode must be less than 10 characters."),
+	name: z.string()
+		.min(1, "Please enter your name.")
+		.max(50, "Name must be less than 50 characters."),
+	country: z.string()
+		.min(1, "Please enter your country.")
+		.max(50, "Country must be less than 50 characters."),
+	city: z.string()
+		.min(1, "Please enter your city.")
+		.max(50, "City must be less than 50 characters."),
+	postcode: z.string()
+		.min(1, "Please enter your postcode.")
+		.max(10, "Postcode must be less than 10 characters.")
+		.regex(/^\d+$/, "Postcode must contain only numbers."),
 });
+
+// Infer the form data type from the schema
+type DetailsFormData = z.infer<typeof formSchema>;
 
 interface DetailsStepProps {
 	formData: FormData;
-	handleFormChange: (field: keyof FormData, value: string | number) => void;
+	handleFormChange: (field: keyof FormData, value: any) => void;
 	onNext: () => void;
 	isLoading: boolean;
 }
 
-const DetailsStep = ({
+const DetailsStep: React.FC<DetailsStepProps> = ({
 	formData,
 	handleFormChange,
 	onNext,
 	isLoading,
-}: DetailsStepProps) => {
+}) => {
 	// Animation setup similar to welcome screen
 	const contentOpacity = useRef(new Animated.Value(0)).current;
 	const contentTranslateY = useRef(new Animated.Value(20)).current;
@@ -46,7 +60,7 @@ const DetailsStep = ({
 		pressDistance: 4,
 	});
 
-	const form = useForm<z.infer<typeof formSchema>>({
+	const form = useForm<DetailsFormData>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			name: formData.name || "",
@@ -93,9 +107,9 @@ const DetailsStep = ({
 			clearTimeout(contentTimer);
 			clearTimeout(buttonTimer);
 		};
-	}, []);
+	}, [contentOpacity, contentTranslateY, buttonOpacity, buttonTranslateY]);
 
-	async function onSubmit(data: z.infer<typeof formSchema>) {
+	const onSubmit = async (data: DetailsFormData) => {
 		try {
 			// Update form data with validated values
 			handleFormChange("name", data.name);
@@ -105,10 +119,10 @@ const DetailsStep = ({
 			
 			// Proceed to next step
 			onNext();
-		} catch (error: Error | any) {
-			console.error(error.message);
+		} catch (error) {
+			console.error("Error submitting details:", error instanceof Error ? error.message : error);
 		}
-	}
+	};
 
 	return (
 		<KeyboardAvoidingView
@@ -127,7 +141,11 @@ const DetailsStep = ({
 				}}
 			>
 				{/* Animated Title Section */}
-				<View
+				<Animated.View
+					style={{
+						opacity: contentOpacity,
+						transform: [{ translateY: contentTranslateY }],
+					}}
 					className="items-center mt-4 mb-6"
 				>
 					<Svg width="280" height="60">
@@ -149,10 +167,14 @@ const DetailsStep = ({
 					<Text className="text-primary text-lg text-center px-4">
 						Tell us a bit about yourself
 					</Text>
-				</View>
+				</Animated.View>
 
 				{/* Form Container matching signup style */}
-				<View
+				<Animated.View
+					style={{
+						opacity: contentOpacity,
+						transform: [{ translateY: contentTranslateY }],
+					}}
 					className="w-full bg-background/80 rounded-2xl p-6 shadow-md"
 				>
 					<Form {...form}>
@@ -256,7 +278,7 @@ const DetailsStep = ({
 							{...buttonPress}
 						>
 							{form.formState.isSubmitting || isLoading ? (
-								<ActivityIndicator size="small" color="#fff" />
+								<ActivityIndicator size="small" color="#25551b" />
 							) : (
 								<View className="flex-row items-center justify-center">
 									<Text className="text-primary text-xl mr-2 font-semibold">
@@ -269,12 +291,12 @@ const DetailsStep = ({
 									/>
 								</View>
 							)}
-                        </Button>
-                    </Animated.View>
-                </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
-    );
+						</Button>
+					</Animated.View>
+				</Animated.View>
+			</ScrollView>
+		</KeyboardAvoidingView>
+	);
 };
 
 export default DetailsStep;
