@@ -1,13 +1,13 @@
 // components/onboarding/GoalsStep.tsx
 import React, { useState, useEffect, useRef } from "react";
-import { 
-    View, 
-    TouchableOpacity, 
-    ScrollView, 
-    Animated,
-    LayoutAnimation,
-    UIManager,
-    Platform
+import {
+	View,
+	TouchableOpacity,
+	ScrollView,
+	Animated,
+	LayoutAnimation,
+	UIManager,
+	Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Text as SvgText } from "react-native-svg";
@@ -15,534 +15,496 @@ import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { SafeAreaView } from "@/components/safe-area-view";
 import { usePressAnimation } from "@/hooks/onPressAnimation";
-import { useAppData } from "@/context/app-data-provider";
-import * as Haptics from 'expo-haptics';
+import * as Haptics from "expo-haptics";
 
-import { FormData } from "@/app/(protected)/onboarding";
+// Import types
+import {
+	AVAILABLE_GOALS,
+	FormData,
+	GoalMetadata,
+	UserGoal,
+} from "@/app/(protected)/onboarding";
 
 // Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
+if (
+	Platform.OS === "android" &&
+	UIManager.setLayoutAnimationEnabledExperimental
+) {
+	UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 interface GoalsStepProps {
-    formData: FormData;
-    handleFormChange: (field: keyof FormData, value: any) => void;
-    onNext: () => void;
-    isLoading: boolean;
-}
-
-interface DraggableGoal {
-    id: string;
-    name: string;
-    priority: number;
+	formData: FormData;
+	handleFormChange: (field: keyof FormData, value: any) => void;
+	onNext: () => void;
+	isLoading: boolean;
 }
 
 const GoalsStep: React.FC<GoalsStepProps> = ({
-    formData,
-    handleFormChange,
-    onNext,
-    isLoading
+	formData,
+	handleFormChange,
+	onNext,
+	isLoading,
 }) => {
-    const [orderedGoals, setOrderedGoals] = useState<DraggableGoal[]>([]);
-    const [animatingIndex, setAnimatingIndex] = useState<number | null>(null);
-    const [hasUserInteracted, setHasUserInteracted] = useState(false);
-    const { tags } = useAppData();
-    
-    // Animation setup similar to other screens
-    const contentOpacity = useRef(new Animated.Value(0)).current;
-    const contentTranslateY = useRef(new Animated.Value(20)).current;
-    const buttonOpacity = useRef(new Animated.Value(0)).current;
-    const buttonTranslateY = useRef(new Animated.Value(20)).current;
+	const [orderedGoals, setOrderedGoals] = useState<GoalMetadata[]>([]);
+	const [animatingIndex, setAnimatingIndex] = useState<number | null>(null);
+	const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
-    // Animation values for each card
-    const cardAnimations = useRef<{ [key: string]: Animated.Value }>({}).current;
-    const buttonScales = useRef<{ [key: string]: Animated.Value }>({}).current;
+	// Animation setup
+	const contentOpacity = useRef(new Animated.Value(0)).current;
+	const contentTranslateY = useRef(new Animated.Value(20)).current;
+	const buttonOpacity = useRef(new Animated.Value(0)).current;
+	const buttonTranslateY = useRef(new Animated.Value(20)).current;
 
-    // Press animation for button
-    const buttonPress = usePressAnimation({
-        hapticStyle: 'Medium',
-        pressDistance: 4,
-    });
+	// Animation values for each card
+	const cardAnimations = useRef<{ [key: string]: Animated.Value }>({}).current;
+	const buttonScales = useRef<{ [key: string]: Animated.Value }>({}).current;
 
-    useEffect(() => {
-        // Content entrance animation
-        const contentTimer = setTimeout(() => {
-            Animated.parallel([
-                Animated.timing(contentOpacity, {
-                    toValue: 1,
-                    duration: 400,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(contentTranslateY, {
-                    toValue: 0,
-                    duration: 400,
-                    useNativeDriver: true,
-                }),
-            ]).start();
-        }, 100);
+	// Press animation for button
+	const buttonPress = usePressAnimation({
+		hapticStyle: "Medium",
+		pressDistance: 4,
+	});
 
-        // Button entrance animation
-        const buttonTimer = setTimeout(() => {
-            Animated.parallel([
-                Animated.timing(buttonOpacity, {
-                    toValue: 1,
-                    duration: 300,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(buttonTranslateY, {
-                    toValue: 0,
-                    duration: 300,
-                    useNativeDriver: true,
-                }),
-            ]).start();
-        }, 300);
+	useEffect(() => {
+		// Content entrance animation
+		const contentTimer = setTimeout(() => {
+			Animated.parallel([
+				Animated.timing(contentOpacity, {
+					toValue: 1,
+					duration: 400,
+					useNativeDriver: true,
+				}),
+				Animated.timing(contentTranslateY, {
+					toValue: 0,
+					duration: 400,
+					useNativeDriver: true,
+				}),
+			]).start();
+		}, 100);
 
-        return () => {
-            clearTimeout(contentTimer);
-            clearTimeout(buttonTimer);
-        };
-    }, [contentOpacity, contentTranslateY, buttonOpacity, buttonTranslateY]);
+		// Button entrance animation
+		const buttonTimer = setTimeout(() => {
+			Animated.parallel([
+				Animated.timing(buttonOpacity, {
+					toValue: 1,
+					duration: 300,
+					useNativeDriver: true,
+				}),
+				Animated.timing(buttonTranslateY, {
+					toValue: 0,
+					duration: 300,
+					useNativeDriver: true,
+				}),
+			]).start();
+		}, 300);
 
-    // Initialize ordered goals from tags
-    useEffect(() => {
-        const userPreferenceTags = formData.userPreferenceTags || [];
-        const goalTags = tags.filter((tag) => tag.type === "goal");
+		return () => {
+			clearTimeout(contentTimer);
+			clearTimeout(buttonTimer);
+		};
+	}, [contentOpacity, contentTranslateY, buttonOpacity, buttonTranslateY]);
 
-        const userGoalTags = userPreferenceTags.filter((tag) => 
-            goalTags.some(g => g.id === tag.tag_id)
-        );
+	// Initialize ordered goals
+	useEffect(() => {
+		// Check if user already has goals set
+		if (formData.userGoals && formData.userGoals.length > 0) {
+			// Map the user's goals to GoalMetadata objects in the saved order
+			const userOrderedGoals = formData.userGoals
+				.map((goalType) => AVAILABLE_GOALS.find((g) => g.type === goalType))
+				.filter((goal): goal is GoalMetadata => goal !== undefined);
 
-        if (userGoalTags && userGoalTags.length > 0) {
-            const orderedTags = userGoalTags
-                .map((tag, index) => {
-                    const goalTag = goalTags.find(t => t.id === tag.tag_id);
-                    return goalTag ? {
-                        id: goalTag.id,
-                        name: goalTag.name,
-                        priority: tag.priority ?? index + 1,
-                    } : null;
-                })
-                .filter((item): item is DraggableGoal => item !== null);
+			setOrderedGoals(userOrderedGoals);
+			setHasUserInteracted(true);
+		} else {
+			// Set default order
+			setOrderedGoals([...AVAILABLE_GOALS]);
+		}
 
-            setOrderedGoals(orderedTags);
-            setHasUserInteracted(true);
-        } else {
-            const initialOrderedGoals = goalTags.map((tag, index) => ({
-                id: tag.id,
-                name: tag.name,
-                priority: index
-            }));
-            setOrderedGoals(initialOrderedGoals);
-        }
-        
-        // Initialize animation values for each goal
-        goalTags.forEach((tag) => {
-            if (!cardAnimations[tag.id]) {
-                cardAnimations[tag.id] = new Animated.Value(1);
-            }
-            // Initialize button scales
-            buttonScales[`${tag.id}-up`] = new Animated.Value(1);
-            buttonScales[`${tag.id}-down`] = new Animated.Value(1);
-        });
-    }, [tags, formData.userPreferenceTags, cardAnimations, buttonScales]);
+		// Initialize animation values
+		AVAILABLE_GOALS.forEach((goal) => {
+			if (!cardAnimations[goal.type]) {
+				cardAnimations[goal.type] = new Animated.Value(1);
+			}
+			buttonScales[`${goal.type}-up`] = new Animated.Value(1);
+			buttonScales[`${goal.type}-down`] = new Animated.Value(1);
+		});
+	}, [formData.userGoals, cardAnimations, buttonScales]);
 
-    useEffect(() => {
-        orderedGoals.forEach((goal) => {
-            if (!cardAnimations[goal.id]) {
-                cardAnimations[goal.id] = new Animated.Value(1);
-            }
+	const animateButtonPress = (goalType: string, direction: "up" | "down") => {
+		const scaleValue = buttonScales[`${goalType}-${direction}`];
 
-            buttonScales[`${goal.id}-up`] = buttonScales[`${goal.id}-up`] || new Animated.Value(1);
-            buttonScales[`${goal.id}-down`] = buttonScales[`${goal.id}-down`] || new Animated.Value(1);
-        });
-    }, [orderedGoals, cardAnimations, buttonScales]);
+		Animated.sequence([
+			Animated.timing(scaleValue, {
+				toValue: 0.85,
+				duration: 100,
+				useNativeDriver: true,
+			}),
+			Animated.timing(scaleValue, {
+				toValue: 1,
+				duration: 100,
+				useNativeDriver: true,
+			}),
+		]).start();
+	};
 
-    const animateButtonPress = (goalId: string, direction: 'up' | 'down') => {
-        const scaleValue = buttonScales[`${goalId}-${direction}`];
-        
-        Animated.sequence([
-            Animated.timing(scaleValue, {
-                toValue: 0.85,
-                duration: 100,
-                useNativeDriver: true,
-            }),
-            Animated.timing(scaleValue, {
-                toValue: 1,
-                duration: 100,
-                useNativeDriver: true,
-            })
-        ]).start();
-    };
+	const animateCardSwap = (
+		goalType1: string,
+		goalType2: string,
+		callback: () => void,
+	) => {
+		const anim1 = cardAnimations[goalType1];
+		const anim2 = cardAnimations[goalType2];
 
-    const animateCardSwap = (goalId1: string, goalId2: string, callback: () => void) => {
-        const anim1 = cardAnimations[goalId1];
-        const anim2 = cardAnimations[goalId2];
-        
-        // Pulse animation for swapping cards
-        Animated.parallel([
-            Animated.sequence([
-                Animated.timing(anim1, {
-                    toValue: 1.02,
-                    duration: 150,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(anim1, {
-                    toValue: 1,
-                    duration: 150,
-                    useNativeDriver: true,
-                })
-            ]),
-            Animated.sequence([
-                Animated.timing(anim2, {
-                    toValue: 1.02,
-                    duration: 150,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(anim2, {
-                    toValue: 1,
-                    duration: 150,
-                    useNativeDriver: true,
-                })
-            ])
-        ]).start();
+		Animated.parallel([
+			Animated.sequence([
+				Animated.timing(anim1, {
+					toValue: 1.02,
+					duration: 150,
+					useNativeDriver: true,
+				}),
+				Animated.timing(anim1, {
+					toValue: 1,
+					duration: 150,
+					useNativeDriver: true,
+				}),
+			]),
+			Animated.sequence([
+				Animated.timing(anim2, {
+					toValue: 1.02,
+					duration: 150,
+					useNativeDriver: true,
+				}),
+				Animated.timing(anim2, {
+					toValue: 1,
+					duration: 150,
+					useNativeDriver: true,
+				}),
+			]),
+		]).start();
 
-        // Layout animation for position change
-        LayoutAnimation.configureNext({
-            duration: 300,
-            create: {
-                type: LayoutAnimation.Types.spring,
-                property: LayoutAnimation.Properties.opacity,
-                springDamping: 0.7,
-            },
-            update: {
-                type: LayoutAnimation.Types.spring,
-                springDamping: 0.7,
-            },
-        }, callback);
-    };
+		LayoutAnimation.configureNext(
+			{
+				duration: 300,
+				create: {
+					type: LayoutAnimation.Types.spring,
+					property: LayoutAnimation.Properties.opacity,
+					springDamping: 0.7,
+				},
+				update: {
+					type: LayoutAnimation.Types.spring,
+					springDamping: 0.7,
+				},
+			},
+			callback,
+		);
+	};
 
-    const moveGoalUp = (index: number) => {
-        if (index === 0) return;
-        
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        
-        const currentGoal = orderedGoals[index];
-        const previousGoal = orderedGoals[index - 1];
-        
-        animateButtonPress(currentGoal.id, 'up');
-        setAnimatingIndex(index);
-        setHasUserInteracted(true);
-        
-        animateCardSwap(currentGoal.id, previousGoal.id, () => {
-            const newGoals = [...orderedGoals];
-            [newGoals[index - 1], newGoals[index]] = [newGoals[index], newGoals[index - 1]];
-            
-            // Update order values
-            const updatedGoals = newGoals.map((goal, idx) => ({
-                ...goal,
-                priority: idx
-            }));
-            
-            setOrderedGoals(updatedGoals);
-            
-            setTimeout(() => setAnimatingIndex(null), 300);
-        });
-    };
+	const moveGoalUp = (index: number) => {
+		if (index === 0) return;
 
-    const moveGoalDown = (index: number) => {
-        if (index === orderedGoals.length - 1) return;
-        
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        
-        const currentGoal = orderedGoals[index];
-        const nextGoal = orderedGoals[index + 1];
-        
-        animateButtonPress(currentGoal.id, 'down');
-        setAnimatingIndex(index);
-        setHasUserInteracted(true);
-        
-        animateCardSwap(currentGoal.id, nextGoal.id, () => {
-            const newGoals = [...orderedGoals];
-            [newGoals[index], newGoals[index + 1]] = [newGoals[index + 1], newGoals[index]];
-            
-            // Update order values
-            const updatedGoals = newGoals.map((goal, idx) => ({
-                ...goal,
-                priority: idx
-            }));
-            
-            setOrderedGoals(updatedGoals);
-            setTimeout(() => setAnimatingIndex(null), 300);
-        });
-    };
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    const handleContinue = () => {
-        // Get non-goal tags from existing preferences
-        const nonGoalTags = formData.userPreferenceTags.filter(tag => {
-            const goalTags = tags.filter(t => t.type === "goal");
-            return !goalTags.some(g => g.id === tag.tag_id);
-        });
+		const currentGoal = orderedGoals[index];
+		const previousGoal = orderedGoals[index - 1];
 
-        // Create updated goal tags with new priorities
-        const updatedGoalTags = orderedGoals.map((goal, index) => ({
-            tag_id: goal.id,
-            priority: index + 1
-        }));
+		animateButtonPress(currentGoal.type, "up");
+		setAnimatingIndex(index);
+		setHasUserInteracted(true);
 
-        // Combine non-goal tags with updated goal tags
-        const allTags = [...nonGoalTags, ...updatedGoalTags];
+		animateCardSwap(currentGoal.type, previousGoal.type, () => {
+			const newGoals = [...orderedGoals];
+			[newGoals[index - 1], newGoals[index]] = [
+				newGoals[index],
+				newGoals[index - 1],
+			];
+			setOrderedGoals(newGoals);
+			setTimeout(() => setAnimatingIndex(null), 300);
+		});
+	};
 
-        handleFormChange('userPreferenceTags', allTags);
-        onNext();
-    };
+	const moveGoalDown = (index: number) => {
+		if (index === orderedGoals.length - 1) return;
 
-    const renderGoalItem = (goal: DraggableGoal, index: number) => {
-        const isFirst = index === 0;
-        const isLast = index === orderedGoals.length - 1;
-        const isAnimating = animatingIndex === index || 
-                           animatingIndex === index - 1 || 
-                           animatingIndex === index + 1;
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-        const cardScale = cardAnimations[goal.id] || new Animated.Value(1);
-        const upButtonScale = buttonScales[`${goal.id}-up`] || new Animated.Value(1);
-        const downButtonScale = buttonScales[`${goal.id}-down`] || new Animated.Value(1);
+		const currentGoal = orderedGoals[index];
+		const nextGoal = orderedGoals[index + 1];
 
-        // Priority colors based on position
-        const getPriorityColor = (idx: number): string => {
-            switch(idx) {
-                case 0: return '#25551b';
-                case 1: return '#25551bAA';
-                case 2: return '#25551b77';
-                default: return '#25551b44';
-            }
-        };
+		animateButtonPress(currentGoal.type, "down");
+		setAnimatingIndex(index);
+		setHasUserInteracted(true);
 
-        const getPriorityLabel = (idx: number): string => {
-            switch(idx) {
-                case 0: return "Highest Priority";
-                case 1: return "High Priority";
-                case 2: return "Medium Priority";
-                default: return "";
-            }
-        };
+		animateCardSwap(currentGoal.type, nextGoal.type, () => {
+			const newGoals = [...orderedGoals];
+			[newGoals[index], newGoals[index + 1]] = [
+				newGoals[index + 1],
+				newGoals[index],
+			];
+			setOrderedGoals(newGoals);
+			setTimeout(() => setAnimatingIndex(null), 300);
+		});
+	};
 
-        return (
-            <Animated.View
-                key={goal.id}
-                className="mb-3"
-                style={{
-                    transform: [{ scale: cardScale }],
-                    opacity: isAnimating ? 0.95 : 1,
-                }}
-            >
-                <View
-                    className="flex-row items-center bg-white/90 rounded-xl border-2 overflow-hidden"
-                    style={{
-                        borderColor: index === 0 ? '#25551b40' : '#25551b20',
-                        shadowColor: index === 0 ? "#25551b" : "#000",
-                        shadowOffset: { 
-                            width: 0, 
-                            height: index === 0 ? 2 : 1 
-                        },
-                        shadowOpacity: index === 0 ? 0.2 : 0.1,
-                        shadowRadius: index === 0 ? 4 : 2,
-                        elevation: index === 0 ? 4 : 2,
-                    }}
-                >
-                    {/* Priority indicator bar */}
-                    <View 
-                        className="w-1.5 h-full"
-                        style={{ backgroundColor: getPriorityColor(index) }}
-                    />
-                    
-                    {/* Goal content */}
-                    <View className="flex-row items-center justify-between flex-1 py-3 pl-4 pr-2">
-                        <View className="flex-row items-center flex-1">
-                            <View 
-                                className="w-9 h-9 rounded-full items-center justify-center mr-3"
-                                style={{ backgroundColor: getPriorityColor(index) }}
-                            >
-                                <Text className="text-white font-bold text-base">
-                                    {index + 1}
-                                </Text>
-                            </View>
-                            <View className="flex-1">
-                                <Text className="text-lg font-medium text-primary">
-                                    {goal.name}
-                                </Text>
-                                {index < 3 && (
-                                    <Text className="text-xs text-primary/50 mt-0.5">
-                                        {getPriorityLabel(index)}
-                                    </Text>
-                                )}
-                            </View>
-                        </View>
-                        
-                        {/* Arrow control buttons */}
-                        <View className="flex-row items-center gap-1">
-                            <Animated.View style={{ transform: [{ scale: upButtonScale }] }}>
-                                <TouchableOpacity
-                                    onPress={() => moveGoalUp(index)}
-                                    disabled={isFirst || animatingIndex !== null}
-                                    className={`rounded-lg items-center justify-center ${
-                                        isFirst ? 'bg-gray-100' : 'bg-primary/10'
-                                    }`}
-                                    style={{
-                                        width: 40,
-                                        height: 40,
-                                    }}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`Move ${goal.name} up`}
-                                    accessibilityHint="Increases the priority of this goal"
-                                >
-                                    <View className={`rounded-md items-center justify-center ${
-                                        !isFirst && 'bg-primary/10'
-                                    }`} style={{ width: 36, height: 36 }}>
-                                        <Ionicons 
-                                            name="arrow-up" 
-                                            size={20} 
-                                            color={isFirst ? "#00000020" : "#25551b"} 
-                                        />
-                                    </View>
-                                </TouchableOpacity>
-                            </Animated.View>
-                            
-                            <Animated.View style={{ transform: [{ scale: downButtonScale }] }}>
-                                <TouchableOpacity
-                                    onPress={() => moveGoalDown(index)}
-                                    disabled={isLast || animatingIndex !== null}
-                                    className={`rounded-lg items-center justify-center ${
-                                        isLast ? 'bg-gray-100' : 'bg-primary/10'
-                                    }`}
-                                    style={{
-                                        width: 40,
-                                        height: 40,
-                                    }}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`Move ${goal.name} down`}
-                                    accessibilityHint="Decreases the priority of this goal"
-                                >
-                                    <View className={`rounded-md items-center justify-center ${
-                                        !isLast && 'bg-primary/10'
-                                    }`} style={{ width: 36, height: 36 }}>
-                                        <Ionicons 
-                                            name="arrow-down" 
-                                            size={20} 
-                                            color={isLast ? "#00000020" : "#25551b"} 
-                                        />
-                                    </View>
-                                </TouchableOpacity>
-                            </Animated.View>
-                        </View>
-                    </View>
-                </View>
-            </Animated.View>
-        );
-    };
-    
-    return (
-        <SafeAreaView className="flex-1 bg-lightgreen" edges={["top"]}>
-            <ScrollView
-                className="flex-1"
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-                contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}
-            >
-                {/* Animated Title Section */}
-                <Animated.View
-                    style={{
-                        opacity: contentOpacity,
-                        transform: [{ translateY: contentTranslateY }]
-                    }}
-                    className="items-center mt-8 mb-8"
-                >
-                    <Svg width="280" height="60">
-                        <SvgText
-                            x="140"
-                            y="50"
-                            textAnchor="middle"
-                            fill="#25551b"
-                            stroke="#E2F380"
-                            strokeWidth="0"
-                            letterSpacing="2"
-                            fontFamily="MMDisplay"
-                            fontSize="36"
-                            fontWeight="bold"
-                        >
-                            GOALS
-                        </SvgText>
-                    </Svg>
-                    <Text className="text-primary text-lg text-center px-4">
-                        Order your goals by importance
-                    </Text>
-                    <Text className="text-primary/60 text-sm text-center px-4 mt-1">
-                        Your top priority will guide your meal recommendations
-                    </Text>
-                </Animated.View>
+	const handleContinue = () => {
+		// Save the ordered goals as an array of goal types
+		const goalTypes: UserGoal[] = orderedGoals.map((g) => g.type);
+		handleFormChange("userGoals", goalTypes);
+		onNext();
+	};
 
-                {/* Form Container */}
-                <Animated.View
-                    style={{
-                        opacity: contentOpacity,
-                        transform: [{ translateY: contentTranslateY }]
-                    }}
-                    className="w-full bg-background/80 rounded-2xl p-6 shadow-md"
-                >
-                    <View className="gap-2">
-                        {/* Instructions */}
-                        <View className="flex-row items-center mb-4 px-1">
-                            <Ionicons name="swap-vertical" size={20} color="#25551b60" />
-                            <Text className="text-primary/60 text-sm ml-2 flex-1">
-                                Tap the arrow buttons to reorder your priorities
-                            </Text>
-                        </View>
-                        
-                        {/* Goal List */}
-                        <View>
-                            {orderedGoals.map((goal, index) => renderGoalItem(goal, index))}
-                        </View>
+	const renderGoalItem = (goal: GoalMetadata, index: number) => {
+		const isFirst = index === 0;
+		const isLast = index === orderedGoals.length - 1;
+		const isAnimating =
+			animatingIndex === index ||
+			animatingIndex === index - 1 ||
+			animatingIndex === index + 1;
 
-                        {/* Continue Button */}
-                        <Animated.View
-                            style={{
-                                opacity: buttonOpacity,
-                                transform: [{ translateY: buttonTranslateY }]
-                            }}
-                            className="mt-6"
-                        >
-                            <Button
-                                size="lg"
-                                variant="default"
-                                onPress={handleContinue}
-                                disabled={orderedGoals.length === 0 || isLoading || animatingIndex !== null}
-                                className="w-full"
-                                accessibilityRole="button"
-                                accessibilityLabel="Continue to next step"
-                                accessibilityHint="Proceed to the meal types step of onboarding"
-                                accessibilityState={{ 
-                                    disabled: orderedGoals.length === 0 || isLoading,
-                                    busy: isLoading 
-                                }}
-                                {...buttonPress}
-                            >
-                                <View className="flex-row items-center justify-center">
-                                    <Text className="text-primary text-xl mr-2 font-semibold">
-                                        {isLoading ? "Saving..." : hasUserInteracted ? "Continue" : "Continue with defaults"}
-                                    </Text>
-                                    <Ionicons
-                                        name="arrow-forward"
-                                        size={20}
-                                        color="#25551b"
-                                    />
-                                </View>
-                            </Button>
-                        </Animated.View>
-                    </View>
-                </Animated.View>
-            </ScrollView>
-        </SafeAreaView>
-    );
+		const cardScale = cardAnimations[goal.type] || new Animated.Value(1);
+		const upButtonScale =
+			buttonScales[`${goal.type}-up`] || new Animated.Value(1);
+		const downButtonScale =
+			buttonScales[`${goal.type}-down`] || new Animated.Value(1);
+
+		const getPriorityLabel = (idx: number): string => {
+			switch (idx) {
+				case 0:
+					return "Top Priority";
+				case 1:
+					return "High Priority";
+				case 2:
+					return "Medium Priority";
+				case 3:
+					return "Low Priority";
+				default:
+					return "";
+			}
+		};
+
+		return (
+			<Animated.View
+				key={goal.type}
+				className="mb-3"
+				style={{
+					transform: [{ scale: cardScale }],
+					opacity: isAnimating ? 0.95 : 1,
+				}}
+			>
+				<View
+					className="flex-row items-center bg-white/90 rounded-xl border-2 overflow-hidden"
+					style={{
+						borderColor: index === 0 ? "#25551b40" : "#25551b20",
+						shadowColor: index === 0 ? "#25551b" : "#000",
+						shadowOffset: {
+							width: 0,
+							height: index === 0 ? 2 : 1,
+						},
+						shadowOpacity: index === 0 ? 0.2 : 0.1,
+						shadowRadius: index === 0 ? 4 : 2,
+						elevation: index === 0 ? 4 : 2,
+					}}
+				>
+					{/* Priority indicator bar with goal color */}
+					<View
+						className="w-1.5 h-full"
+						style={{
+							backgroundColor:
+								goal.color +
+								(index === 0
+									? "FF"
+									: index === 1
+										? "CC"
+										: index === 2
+											? "99"
+											: "66"),
+						}}
+					/>
+
+					{/* Goal content */}
+					<View className="flex-row items-center justify-between flex-1 py-4 pl-4 pr-2">
+						<View className="flex-row items-center flex-1">
+							{/* Goal icon with color */}
+							<View
+								className="w-10 h-10 rounded-full items-center justify-center mr-3"
+								style={{ backgroundColor: goal.color + "20" }}
+							>
+								<Ionicons
+									name={goal.icon as any}
+									size={24}
+									color={goal.color}
+								/>
+							</View>
+
+							<View className="flex-1">
+								<Text className="text-lg font-semibold text-primary">
+									{goal.name}
+								</Text>
+								<Text className="text-xs text-primary/60 mt-0.5">
+									{goal.description}
+								</Text>
+								{index < 4 && (
+									<Text className="text-xs text-primary/40 mt-0.5 font-medium">
+										{getPriorityLabel(index)}
+									</Text>
+								)}
+							</View>
+						</View>
+
+						{/* Arrow control buttons */}
+						<View className="flex-row items-center gap-1">
+							<Animated.View style={{ transform: [{ scale: upButtonScale }] }}>
+								<TouchableOpacity
+									onPress={() => moveGoalUp(index)}
+									disabled={isFirst || animatingIndex !== null}
+									className={`rounded-lg items-center justify-center ${
+										isFirst ? "bg-gray-100" : "bg-primary/10"
+									}`}
+									style={{
+										width: 40,
+										height: 40,
+									}}
+									accessibilityRole="button"
+									accessibilityLabel={`Move ${goal.name} up`}
+									accessibilityHint="Increases the priority of this goal"
+								>
+									<Ionicons
+										name="arrow-up"
+										size={20}
+										color={isFirst ? "#00000020" : "#25551b"}
+									/>
+								</TouchableOpacity>
+							</Animated.View>
+
+							<Animated.View
+								style={{ transform: [{ scale: downButtonScale }] }}
+							>
+								<TouchableOpacity
+									onPress={() => moveGoalDown(index)}
+									disabled={isLast || animatingIndex !== null}
+									className={`rounded-lg items-center justify-center ${
+										isLast ? "bg-gray-100" : "bg-primary/10"
+									}`}
+									style={{
+										width: 40,
+										height: 40,
+									}}
+									accessibilityRole="button"
+									accessibilityLabel={`Move ${goal.name} down`}
+									accessibilityHint="Decreases the priority of this goal"
+								>
+									<Ionicons
+										name="arrow-down"
+										size={20}
+										color={isLast ? "#00000020" : "#25551b"}
+									/>
+								</TouchableOpacity>
+							</Animated.View>
+						</View>
+					</View>
+				</View>
+			</Animated.View>
+		);
+	};
+
+	return (
+		<SafeAreaView className="flex-1 bg-lightgreen" edges={["top"]}>
+			<ScrollView
+				className="flex-1"
+				showsVerticalScrollIndicator={false}
+				keyboardShouldPersistTaps="handled"
+				contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}
+			>
+				{/* Animated Title Section */}
+				<Animated.View
+					style={{
+						opacity: contentOpacity,
+						transform: [{ translateY: contentTranslateY }],
+					}}
+					className="items-center mt-8 mb-8"
+				>
+					<Svg width="280" height="60">
+						<SvgText
+							x="140"
+							y="50"
+							textAnchor="middle"
+							fill="#25551b"
+							stroke="#E2F380"
+							strokeWidth="0"
+							letterSpacing="2"
+							fontFamily="MMDisplay"
+							fontSize="36"
+							fontWeight="bold"
+						>
+							GOALS
+						</SvgText>
+					</Svg>
+					<Text className="text-primary text-lg text-center px-4">
+						What matters most to you?
+					</Text>
+					<Text className="text-primary/60 text-sm text-center px-4 mt-1">
+						Order your priorities to get personalized recommendations
+					</Text>
+				</Animated.View>
+
+				{/* Form Container */}
+				<Animated.View
+					style={{
+						opacity: contentOpacity,
+						transform: [{ translateY: contentTranslateY }],
+					}}
+					className="w-full bg-background/80 rounded-2xl p-6 shadow-md"
+				>
+					<View className="gap-2">
+						{/* Instructions */}
+						<View className="flex-row items-center mb-4 px-1">
+							<Ionicons name="swap-vertical" size={20} color="#25551b60" />
+							<Text className="text-primary/60 text-sm ml-2 flex-1">
+								Drag to reorder based on what's most important to you
+							</Text>
+						</View>
+
+						{/* Goal List */}
+						<View>
+							{orderedGoals.map((goal, index) => renderGoalItem(goal, index))}
+						</View>
+
+						{/* Continue Button */}
+						<Animated.View
+							style={{
+								opacity: buttonOpacity,
+								transform: [{ translateY: buttonTranslateY }],
+							}}
+							className="mt-6"
+						>
+							<Button
+								size="lg"
+								variant="default"
+								onPress={handleContinue}
+								disabled={isLoading || animatingIndex !== null}
+								className="w-full"
+								accessibilityRole="button"
+								accessibilityLabel="Continue to next step"
+								accessibilityHint="Proceed to the meal types step of onboarding"
+								accessibilityState={{
+									disabled: isLoading,
+									busy: isLoading,
+								}}
+								{...buttonPress}
+							>
+								<View className="flex-row items-center justify-center">
+									<Text className="text-primary text-xl mr-2 font-semibold">
+										{isLoading ? "Saving..." : "Continue"}
+									</Text>
+									<Ionicons name="arrow-forward" size={20} color="#25551b" />
+								</View>
+							</Button>
+						</Animated.View>
+					</View>
+				</Animated.View>
+			</ScrollView>
+		</SafeAreaView>
+	);
 };
 
 export default GoalsStep;

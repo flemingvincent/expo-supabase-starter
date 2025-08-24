@@ -93,6 +93,7 @@ const AppDataContext = createContext<AppDataState>({
 		meals_per_week: 1,
 		serves_per_meal: 1,
 		created_at: "",
+		user_goals: [],
 		user_preference_tags: [],
 	},
 	loading: false,
@@ -139,6 +140,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 			user_id: "",
 			meals_per_week: 1,
 			serves_per_meal: 1,
+			user_goals: [],
 			user_preference_tags: [],
 			created_at: "",
 		});
@@ -247,6 +249,20 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 			setLoading(true);
 			setError(null);
 
+			console.log("🔍 Fetching recipes with tags...");
+
+			// First, let's check if recipe_tags table has any data
+			const { data: recipeTagsCheck, error: checkError } = await supabase
+				.from("recipe_tags")
+				.select("*")
+				.limit(5);
+
+			console.log("🔍 Recipe tags table check:", {
+				recipeTagsCount: recipeTagsCheck?.length || 0,
+				sampleRecipeTags: recipeTagsCheck?.slice(0, 3) || [],
+				checkError: checkError?.message
+			});
+
 			const { data: recipesData, error } = await supabase
 				.from("recipe")
 				.select(
@@ -263,14 +279,65 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				throw new Error(error.message);
 			}
 
+			console.log("🔍 Raw recipe data sample:", {
+				totalRecipes: recipesData?.length || 0,
+				sampleRecipe: recipesData?.[0] ? {
+					name: recipesData[0].name,
+					recipe_tags: recipesData[0].recipe_tags,
+					recipe_tags_type: typeof recipesData[0].recipe_tags,
+					recipe_tags_length: recipesData[0].recipe_tags?.length
+				} : null
+			});
+
+			// Let's also try a different approach - direct join query
+			const { data: alternativeData, error: altError } = await supabase
+				.from("recipe")
+				.select(`
+					*,
+					recipe_tags!inner(tag_id)
+				`)
+				.limit(3);
+
+			console.log("🔍 Alternative query test:", {
+				alternativeResults: alternativeData?.length || 0,
+				sampleAlternative: alternativeData?.[0] || null,
+				altError: altError?.message
+			});
+
 			// Transform the data to extract just the tag_ids
 			const recipesWithTags: RecipeWithTags[] =
-				recipesData?.map((recipe) => ({
-					...recipe,
-					tagIds:
-						recipe.recipe_tags?.map((rt: any) => rt.tag_id).filter(Boolean) ||
-						[],
-				})) || [];
+				recipesData?.map((recipe) => {
+					const tagIds = recipe.recipe_tags?.map((rt: any) => rt.tag_id).filter(Boolean) || [];
+					
+					// Log transformation for first few recipes
+					if (recipesData.indexOf(recipe) < 3) {
+						console.log(`🔍 Transforming recipe "${recipe.name}":`, {
+							rawRecipeTags: recipe.recipe_tags,
+							extractedTagIds: tagIds
+						});
+					}
+					
+					return {
+						...recipe,
+						tagIds: tagIds,
+					};
+				}) || [];
+
+			console.log("📊 Recipes fetched:", {
+				totalRecipes: recipesWithTags.length,
+				recipesWithTags: recipesWithTags.filter(r => r.tagIds.length > 0).length,
+				recipesWithoutTags: recipesWithTags.filter(r => r.tagIds.length === 0).length,
+				sampleRecipeWithTags: recipesWithTags.find(r => r.tagIds.length > 0) ? {
+					name: recipesWithTags.find(r => r.tagIds.length > 0)!.name,
+					tagCount: recipesWithTags.find(r => r.tagIds.length > 0)!.tagIds.length,
+					tagIds: recipesWithTags.find(r => r.tagIds.length > 0)!.tagIds
+				} : "No recipes with tags found",
+				sampleRecipeWithoutTags: recipesWithTags.find(r => r.tagIds.length === 0) ? {
+					name: recipesWithTags.find(r => r.tagIds.length === 0)!.name,
+					tagCount: recipesWithTags.find(r => r.tagIds.length === 0)!.tagIds.length,
+					tagIds: recipesWithTags.find(r => r.tagIds.length === 0)!.tagIds
+				} : null
+			});
 
 			setRecipes(recipesWithTags);
 			filterRecipesByPreferences(recipesWithTags);
@@ -387,6 +454,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 						user_id: session?.user?.id || "",
 						meals_per_week: 1,
 						serves_per_meal: 1,
+						user_goals: [],
 						user_preference_tags: [],
 						created_at: "",
 					});
@@ -398,7 +466,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 			if (prefData) {
 				const { data: tagData, error: tagError } = await supabase
 					.from("user_preference_tags")
-					.select("tag_id, priority")
+					.select("tag_id")
 					.eq("user_preference_id", prefData.id);
 
 				if (tagError) {
@@ -408,8 +476,18 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				// Combine the data
 				const updatedPreferences = {
 					...prefData,
-					user_preference_tags: tagData,
+					user_preference_tags:
+						tagData?.map((tag) => ({ tag_id: tag.tag_id, priority: null })) ||
+						[],
 				};
+
+				console.log("👤 User preferences loaded:", {
+					mealsPerWeek: updatedPreferences.meals_per_week,
+					servesPerMeal: updatedPreferences.serves_per_meal,
+					goals: updatedPreferences.user_goals,
+					preferenceTagCount: updatedPreferences.user_preference_tags.length,
+					preferenceTagIds: updatedPreferences.user_preference_tags.map(t => t.tag_id)
+				});
 
 				setUserPreferences(updatedPreferences);
 
@@ -420,6 +498,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 					user_id: session?.user?.id || "",
 					meals_per_week: 1,
 					serves_per_meal: 1,
+					user_goals: [],
 					user_preference_tags: [],
 					created_at: "",
 				});
@@ -435,18 +514,75 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 	const filterRecipesByPreferences = (
 		recipesToFilter: RecipeWithTags[] = recipes,
 	) => {
-		if (!userPreferences.user_preference_tags?.length) {
+		const userPrefTags = (userPreferences.user_preference_tags?.length ?? 0) > 0;
+		const userGoals = (userPreferences.user_goals?.length ?? 0) > 0;
+
+		console.log("🔍 Starting recipe filtering:", {
+			totalRecipes: recipesToFilter.length,
+			hasPreferenceTags: userPrefTags,
+			hasGoals: userGoals,
+			preferenceTagIds: userPreferences.user_preference_tags?.map(t => t.tag_id) || [],
+			goals: userPreferences.user_goals || [],
+			sampleRecipeTagIds: recipesToFilter[0]?.tagIds || [],
+			recipesWithTagsCount: recipesToFilter.filter(r => r.tagIds && r.tagIds.length > 0).length
+		});
+
+		// Debug: Check if recipes actually have tags
+		const recipesWithTags = recipesToFilter.filter(r => r.tagIds && r.tagIds.length > 0);
+		if (recipesWithTags.length === 0) {
+			console.log("⚠️ WARNING: No recipes have tags! All recipes will be returned.");
+		}
+
+		// If no preferences or goals, return all recipes
+		if (!userPrefTags && !userGoals) {
+			console.log("🔍 No preferences found, returning all recipes");
+			setFilteredRecipes(recipesToFilter);
+			return;
+		}
+
+		// If user has preferences but no recipes have tags, return all recipes to avoid empty state
+		if (userPrefTags && recipesWithTags.length === 0) {
+			console.log("🔍 User has preferences but no recipes have tags, returning all recipes");
 			setFilteredRecipes(recipesToFilter);
 			return;
 		}
 
 		const filtered = recipesToFilter.filter((recipe) => {
-			const hasMatchingTags = recipe.tagIds?.some((tagId) =>
+			// If recipe has no tags, include it if user has no specific preferences
+			if (!recipe.tagIds || recipe.tagIds.length === 0) {
+				console.log("⚠️ Recipe has no tags:", recipe.name);
+				return false; // Skip recipes without tags when filtering by preferences
+			}
+
+			const hasMatchingTags = recipe.tagIds.some((tagId) =>
 				userPreferences.user_preference_tags?.find(
 					(tag) => tag.tag_id === tagId,
 				),
 			);
+			
+			if (hasMatchingTags) {
+				console.log("✅ Recipe matches preferences:", {
+					recipeName: recipe.name,
+					recipeTagIds: recipe.tagIds,
+					matchingTags: recipe.tagIds.filter(tagId => 
+						userPreferences.user_preference_tags?.find(tag => tag.tag_id === tagId)
+					)
+				});
+			} else {
+				console.log("❌ Recipe doesn't match preferences:", {
+					recipeName: recipe.name,
+					recipeTagIds: recipe.tagIds,
+					userPreferenceTagIds: userPreferences.user_preference_tags?.map(t => t.tag_id) || []
+				});
+			}
+			
 			return hasMatchingTags;
+		});
+
+		console.log("🔍 Filtering complete:", {
+			originalCount: recipesToFilter.length,
+			filteredCount: filtered.length,
+			filteredRecipeNames: filtered.map(r => r.name)
 		});
 
 		setFilteredRecipes(filtered);
@@ -455,31 +591,95 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 	const generateInitialMealPlan = async (
 		recipesToUse: RecipeWithTags[] = filteredRecipes,
 	) => {
+		console.log("🍽️ Starting meal plan generation:", {
+			availableRecipes: recipesToUse.length,
+			targetMealsPerWeek: userPreferences.meals_per_week,
+			servesPerMeal: userPreferences.serves_per_meal,
+			hasGoals: (userPreferences.user_goals?.length ?? 0) > 0,
+			hasPreferenceTags: (userPreferences.user_preference_tags?.length ?? 0) > 0
+		});
+
 		if (!recipesToUse.length) {
+			console.log("⚠️ No recipes available for meal plan generation");
 			setCurrentMealPlan([]);
 			return;
 		}
 
 		let scoredRecipes = recipesToUse;
 
-		if (userPreferences.user_preference_tags?.length) {
+		// Score recipes based on user goals and preferences
+		if (
+			userPreferences.user_goals?.length ||
+			userPreferences.user_preference_tags?.length
+		) {
+			console.log("🎯 Scoring recipes based on preferences and goals...");
+			
 			scoredRecipes = recipesToUse.map((recipe) => {
-				const matchingTags =
+				let score = 0;
+				let scoreDetails = {
+					preferenceTags: 0,
+					goalMatches: 0,
+					totalScore: 0
+				};
+
+				// Score based on matching preference tags
+				const matchingPreferenceTags =
 					recipe.tagIds?.filter((tagId) =>
 						userPreferences.user_preference_tags?.find(
 							(tag) => tag.tag_id === tagId,
 						),
 					) ?? [];
+				score += matchingPreferenceTags.length;
+				scoreDetails.preferenceTags = matchingPreferenceTags.length;
 
-				const score = matchingTags.length;
+				// Bonus scoring based on user goals
+				if (userPreferences.user_goals?.length && recipe.tagIds) {
+					// Get all tags for this recipe to check their types
+					const recipeTags = tags.filter((tag) =>
+						recipe.tagIds?.includes(tag.id),
+					);
+
+					// Score based on goal priority
+					userPreferences.user_goals.forEach((goalType, index) => {
+						const priority = userPreferences.user_goals!.length - index; // Higher priority for earlier goals
+						const hasGoalTypeTags = recipeTags.some(
+							(tag) => tag.type === goalType,
+						);
+
+						if (hasGoalTypeTags) {
+							const goalScore = priority * 2;
+							score += goalScore;
+							scoreDetails.goalMatches += goalScore;
+							
+							console.log(`🎯 Goal match for "${recipe.name}":`, {
+								goalType,
+								priority,
+								goalScore,
+								matchingTags: recipeTags.filter(tag => tag.type === goalType).map(t => t.name)
+							});
+						}
+					});
+				}
+
+				scoreDetails.totalScore = score;
+
+				if (score > 0) {
+					console.log(`📊 Recipe scored: "${recipe.name}"`, {
+						score,
+						details: scoreDetails,
+						matchingPreferenceTags: matchingPreferenceTags,
+						recipeTagIds: recipe.tagIds
+					});
+				}
 
 				return {
 					...recipe,
 					score,
-					matchingTags,
+					matchingTags: matchingPreferenceTags,
 				};
 			});
 
+			// Sort by score (highest first) with randomization for ties
 			scoredRecipes = scoredRecipes.sort((a, b) => {
 				const scoreA = a.score ?? 0;
 				const scoreB = b.score ?? 0;
@@ -488,14 +688,33 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				}
 				return scoreB - scoreA;
 			});
+
+			console.log("📈 Recipe scoring complete:", {
+				topScoredRecipes: scoredRecipes.slice(0, 5).map(r => ({
+					name: r.name,
+					score: r.score,
+					matchingTags: r.matchingTags?.length || 0
+				}))
+			});
+
 		} else {
+			// Random selection if no preferences
+			console.log("🎲 No scoring criteria, using random selection");
 			scoredRecipes = [...recipesToUse].sort(() => 0.5 - Math.random());
 		}
 
-		const selectedRecipes = scoredRecipes.slice(
-			0,
-			userPreferences.meals_per_week ?? 4,
-		);
+		const mealsToSelect = userPreferences.meals_per_week ?? 4;
+		const selectedRecipes = scoredRecipes.slice(0, mealsToSelect);
+
+		console.log("✅ Meal plan selection complete:", {
+			requestedMeals: mealsToSelect,
+			selectedMeals: selectedRecipes.length,
+			selectedRecipes: selectedRecipes.map(r => ({
+				name: r.name,
+				score: r.score || 0,
+				servings: userPreferences.serves_per_meal || r.default_servings || 1
+			}))
+		});
 
 		const mealPlanItems: MealPlanItem[] = selectedRecipes.map((recipe) => ({
 			id: generateMealId(),
@@ -507,6 +726,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 	};
 
 	const updateMealServings = (mealId: string, servings: number) => {
+		console.log("🍽️ Updating meal servings:", { mealId, servings });
 		setCurrentMealPlan((prev) =>
 			prev.map((meal) => (meal.id === mealId ? { ...meal, servings } : meal)),
 		);
@@ -517,30 +737,50 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 			(meal) => meal.recipe.id === recipe.id,
 		);
 		if (existingMeal) {
+			console.log("⚠️ Recipe already in meal plan:", recipe.name);
 			return;
 		}
+
+		const newServings = servings ||
+			userPreferences.serves_per_meal ||
+			recipe.default_servings ||
+			1;
+
+		console.log("➕ Adding meal to plan:", {
+			recipeName: recipe.name,
+			servings: newServings
+		});
 
 		const newMeal: MealPlanItem = {
 			id: generateMealId(),
 			recipe,
-			servings:
-				servings ||
-				userPreferences.serves_per_meal ||
-				recipe.default_servings ||
-				1,
+			servings: newServings,
 		};
 
 		setCurrentMealPlan((prev) => [...prev, newMeal]);
 	};
 
 	const removeMealFromPlan = (mealId: string) => {
+		const mealToRemove = currentMealPlan.find(meal => meal.id === mealId);
+		console.log("➖ Removing meal from plan:", {
+			mealId,
+			recipeName: mealToRemove?.recipe.name
+		});
 		setCurrentMealPlan((prev) => prev.filter((meal) => meal.id !== mealId));
 	};
 
 	const getAvailableRecipes = (): RecipeWithTags[] => {
-		return filteredRecipes.filter(
+		const available = filteredRecipes.filter(
 			(recipe) => !currentMealPlan.some((meal) => meal.recipe.id === recipe.id),
 		);
+		
+		console.log("📋 Available recipes (not in current plan):", {
+			total: available.length,
+			inCurrentPlan: currentMealPlan.length,
+			availableRecipes: available.map(r => r.name)
+		});
+		
+		return available;
 	};
 
 	const saveMealPlanForWeek = async (
@@ -551,6 +791,16 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		try {
 			setLoading(true);
 			setError(null);
+
+			console.log("💾 Saving meal plan for week:", {
+				weekId,
+				mealCount: meals.length,
+				status,
+				meals: meals.map(m => ({
+					recipeName: m.recipe.name,
+					servings: m.servings
+				}))
+			});
 
 			// Use the replace_week_meal_plan RPC function for atomic operation
 			const mealsData = meals.map((meal, index) => ({
@@ -570,9 +820,9 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				throw new Error(error.message);
 			}
 
-			console.log("Meal plan saved successfully for week:", weekId);
+			console.log("✅ Meal plan saved successfully for week:", weekId);
 		} catch (error) {
-			console.error("Error saving meal plan:", error);
+			console.error("❌ Error saving meal plan:", error);
 			setError(error instanceof Error ? error : new Error(String(error)));
 			throw error; // Re-throw to handle in the calling component
 		} finally {
@@ -588,6 +838,8 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 			setLoading(true);
 			setError(null);
 
+			console.log("📝 Updating meal plan status:", { weekId, status });
+
 			const { data, error } = await supabase.rpc(
 				"update_week_meal_plan_status",
 				{
@@ -601,9 +853,9 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				throw new Error(error.message);
 			}
 
-			console.log(`Meal plan status updated to ${status} for week:`, weekId);
+			console.log(`✅ Meal plan status updated to ${status} for week:`, weekId);
 		} catch (error) {
-			console.error("Error updating meal plan status:", error);
+			console.error("❌ Error updating meal plan status:", error);
 			setError(error instanceof Error ? error : new Error(String(error)));
 			throw error;
 		} finally {
@@ -615,6 +867,8 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 		weekId: string,
 	): Promise<MealPlanItem[]> => {
 		try {
+			console.log("📖 Loading meal plan for week:", weekId);
+
 			const { data, error } = await supabase.rpc(
 				"get_week_meal_plan_with_recipes",
 				{
@@ -628,8 +882,19 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 			}
 
 			if (!data || data.length === 0) {
+				console.log("📖 No saved meal plan found for week:", weekId);
 				return [];
 			}
+
+			console.log("📖 Loaded meal plan:", {
+				weekId,
+				mealCount: data.length,
+				meals: data.map(item => ({
+					recipeName: item.recipe_name,
+					servings: item.servings,
+					status: item.status
+				}))
+			});
 
 			const mealPlanItems: MealPlanItem[] = data.map((item) => {
 				const fullRecipe = recipes.find((r) => r.id === item.recipe_id);
@@ -661,22 +926,26 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 
 			return mealPlanItems;
 		} catch (error) {
-			console.error("Error fetching meal plan:", error);
+			console.error("❌ Error fetching meal plan:", error);
 			return [];
 		}
 	};
 
 	const loadMealPlanForWeek = async (weekId: string) => {
 		try {
+			console.log("🔄 Loading meal plan for week:", weekId);
 			const savedMeals = await getMealPlanForWeek(weekId);
 			if (savedMeals.length > 0) {
+				console.log("✅ Loaded existing meal plan, setting as current");
 				setCurrentMealPlan(savedMeals);
 			} else {
+				console.log("🎲 No saved meal plan, generating initial plan");
 				// Generate initial plan if no saved plan exists
 				await generateInitialMealPlan();
 			}
 		} catch (error) {
-			console.error("Error loading meal plan for week:", error);
+			console.error("❌ Error loading meal plan for week:", error);
+			console.log("🎲 Falling back to generating initial plan");
 			await generateInitialMealPlan();
 		}
 	};
@@ -711,39 +980,65 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 	};
 
 	const refreshFilteredRecipes = () => {
+		console.log("🔄 Refreshing filtered recipes");
 		filterRecipesByPreferences();
 	};
 
 	const getCurrentMealPlan = (limit?: number): MealPlanItem[] => {
-		if (limit) {
-			return currentMealPlan.slice(0, limit);
-		}
-		return currentMealPlan;
+		const plan = limit ? currentMealPlan.slice(0, limit) : currentMealPlan;
+		console.log("📋 Getting current meal plan:", {
+			totalMeals: currentMealPlan.length,
+			requestedLimit: limit,
+			returnedMeals: plan.length
+		});
+		return plan;
 	};
 
 	const getWeekById = (weekId: string): WeekWithComputed | undefined => {
-		return weeks.find((w) => w.id === weekId);
+		const week = weeks.find((w) => w.id === weekId);
+		console.log("📅 Getting week by ID:", {
+			weekId,
+			found: !!week,
+			weekTitle: week?.displayTitle
+		});
+		return week;
 	};
 
 	const getWeeksRange = (
 		startOffset: number,
 		endOffset: number,
 	): WeekWithComputed[] => {
-		return weeks.filter(
+		const rangeWeeks = weeks.filter(
 			(w) => w.weekOffset >= startOffset && w.weekOffset <= endOffset,
 		);
+		console.log("📅 Getting weeks range:", {
+			startOffset,
+			endOffset,
+			totalWeeks: weeks.length,
+			rangeWeeks: rangeWeeks.length,
+			weekTitles: rangeWeeks.map(w => w.displayTitle)
+		});
+		return rangeWeeks;
 	};
 
 	const getUpcomingWeeks = (count: number): WeekWithComputed[] => {
-		return weeks
+		const upcoming = weeks
 			.filter((w) => w.status === "current" || w.status === "future")
 			.slice(0, count);
+		console.log("📅 Getting upcoming weeks:", {
+			requestedCount: count,
+			foundCount: upcoming.length,
+			weekTitles: upcoming.map(w => w.displayTitle)
+		});
+		return upcoming;
 	};
 
 	const refreshAll = async () => {
 		try {
 			setLoading(true);
 			setError(null);
+
+			console.log("🔄 Starting full data refresh...");
 
 			await Promise.all([
 				fetchTags(),
@@ -754,8 +1049,10 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 				fetchWeeks(),
 				fetchUserPreferences(),
 			]);
+
+			console.log("✅ Full data refresh complete");
 		} catch (error) {
-			console.error("Error refreshing all data:", error);
+			console.error("❌ Error refreshing all data:", error);
 			setError(error instanceof Error ? error : new Error(String(error)));
 		} finally {
 			setLoading(false);
@@ -764,18 +1061,21 @@ export function AppDataProvider({ children }: PropsWithChildren) {
 
 	useEffect(() => {
 		if (session?.user?.id) {
+			console.log("🔑 User session detected, starting data refresh");
 			refreshAll();
 		}
 	}, [session?.user?.id]);
 
 	useEffect(() => {
 		if (recipes.length && userPreferences.id) {
+			console.log("🔄 Recipes or preferences changed, filtering recipes");
 			filterRecipesByPreferences();
 		}
 	}, [recipes, userPreferences]);
 
 	useEffect(() => {
 		if (filteredRecipes.length && userPreferences.id) {
+			console.log("🔄 Filtered recipes changed, generating new meal plan");
 			generateInitialMealPlan();
 		}
 	}, [filteredRecipes, userPreferences]);

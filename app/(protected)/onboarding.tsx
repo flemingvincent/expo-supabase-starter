@@ -6,7 +6,7 @@ import {
 	Animated,
 	Dimensions,
 	Easing,
-    Alert,
+	Alert,
 } from "react-native";
 import { SafeAreaView } from "@/components/safe-area-view";
 import { router } from "expo-router";
@@ -20,11 +20,11 @@ import { Text } from "@/components/ui/text";
 import { supabase } from "@/config/supabase";
 
 // Import types from our database types file
-import { 
-    UserPreferencesInsert, 
-    UserPreferenceTagInsert,
-    ProfileUpdate,
-    TagType 
+import {
+	UserPreferencesInsert,
+	UserPreferenceTagInsert,
+	ProfileUpdate,
+	TagType,
 } from "@/types/database";
 
 // Import the step components (excluding WelcomeStep)
@@ -37,23 +37,66 @@ import { useAppData } from "@/context/app-data-provider";
 
 const { width, height } = Dimensions.get("window");
 
+export type UserGoal = "budget" | "macro" | "time" | "meal_type";
+
+export interface GoalMetadata {
+	type: UserGoal;
+	name: string;
+	description: string;
+	icon: string; // Ionicons name
+	color: string;
+}
+
+export const AVAILABLE_GOALS: GoalMetadata[] = [
+	{
+		type: "budget",
+		name: "Saving Money",
+		description: "Find budget-friendly recipes",
+		icon: "cash-outline",
+		color: "#10B981", // Green
+	},
+	{
+		type: "macro",
+		name: "Healthy Eating",
+		description: "Focus on nutritional goals",
+		icon: "fitness-outline",
+		color: "#F59E0B", // Orange
+	},
+	{
+		type: "time",
+		name: "Saving Time",
+		description: "Quick and easy meals",
+		icon: "time-outline",
+		color: "#3B82F6", // Blue
+	},
+	{
+		type: "meal_type",
+		name: "Weekly Planning",
+		description: "Organized meal preparation",
+		icon: "calendar-outline",
+		color: "#8B5CF6", // Purple
+	},
+];
+
 // Define the FormData interface for onboarding
 export interface FormData {
-    // Profile fields
-    name: string;
-    country: string;
-    city: string;
-    postcode: number;
-    
-    // User preferences fields
-    mealsPerWeek: number;
-    servesPerMeal: number;
-    
-    // User preference tags
-    userPreferenceTags: Array<{
-        tag_id: string;
-        priority?: number | null;
-    }>;
+	// Profile fields
+	name: string;
+	country: string;
+	city: string;
+	postcode: number;
+
+	// User preferences fields
+	mealsPerWeek: number;
+	servesPerMeal: number;
+
+	userGoals: string[];
+
+	// User preference tags
+	userPreferenceTags: Array<{
+		tag_id: string;
+		priority?: number | null;
+	}>;
 }
 
 const SuccessAnimation = ({
@@ -272,7 +315,8 @@ const SuccessAnimation = ({
 
 export default function OnboardingScreen() {
 	const { session, profile, updateProfile } = useAuth();
-	const { userPreferences, tags, refreshUserPreferences, refreshAll } = useAppData();
+	const { userPreferences, tags, refreshUserPreferences, refreshAll } =
+		useAppData();
 	const [currentStep, setCurrentStep] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
 	const [showSuccess, setShowSuccess] = useState(false);
@@ -288,6 +332,7 @@ export default function OnboardingScreen() {
 		postcode: profile?.post_code || 0,
 		mealsPerWeek: userPreferences?.meals_per_week || 1,
 		servesPerMeal: userPreferences?.serves_per_meal || 1,
+		userGoals: userPreferences?.user_goals || [],
 		userPreferenceTags: userPreferences?.user_preference_tags || [],
 	});
 
@@ -344,11 +389,12 @@ export default function OnboardingScreen() {
 
 			await updateProfile(profileUpdates);
 
-			// Upsert user preferences
+			// Upsert user preferences with user_goals
 			const userPreferencesData: Partial<UserPreferencesInsert> = {
 				user_id: session?.user?.id,
 				meals_per_week: formData.mealsPerWeek,
 				serves_per_meal: formData.servesPerMeal,
+				user_goals: formData.userGoals,
 			};
 
 			const { data: prefData, error: prefError } = await supabase
@@ -359,7 +405,7 @@ export default function OnboardingScreen() {
 
 			if (prefError) throw prefError;
 
-			// Handle user preference tags
+			// Handle user preference tags (dietary preferences, meal types, etc.)
 			if (formData.userPreferenceTags.length > 0 && prefData) {
 				const preferenceId = prefData.id;
 
@@ -371,43 +417,32 @@ export default function OnboardingScreen() {
 
 				if (deleteError) throw deleteError;
 
-				// Prepare tag inserts with proper typing
-				const tagInserts: UserPreferenceTagInsert[] = formData.userPreferenceTags.map(
-					(tag, index) => {
-						// Check if this tag is a goal and add priority
-						const goalTags = tags.filter((t) => t.type === "goal");
-						const goalIndex = goalTags.findIndex(
-							(goalTag) => goalTag.id === tag.tag_id,
-						);
+				// Insert new preference tags (no longer includes goals)
+				const tagInserts: UserPreferenceTagInsert[] =
+					formData.userPreferenceTags.map((tag) => ({
+						user_preference_id: preferenceId,
+						tag_id: tag.tag_id,
+					}));
 
-						const insert: UserPreferenceTagInsert = {
-							user_preference_id: preferenceId,
-							tag_id: tag.tag_id,
-							priority: goalIndex !== -1 ? goalIndex + 1 : null,
-						};
+				if (tagInserts.length > 0) {
+					const { error: insertError } = await supabase
+						.from("user_preference_tags")
+						.insert(tagInserts);
 
-						return insert;
-					},
-				);
-
-				const { error: insertError } = await supabase
-					.from("user_preference_tags")
-					.insert(tagInserts);
-
-				if (insertError) throw insertError;
+					if (insertError) throw insertError;
+				}
 			}
 
 			// Refresh app data to get the latest preferences
 			await refreshUserPreferences();
 			await refreshAll();
-			
 		} catch (error) {
 			console.error("Error completing onboarding:", error);
 			setShowSuccess(false);
 			Alert.alert(
 				"Error",
 				"There was an error saving your preferences. Please try again.",
-				[{ text: "OK", onPress: () => router.replace("/") }]
+				[{ text: "OK", onPress: () => router.replace("/") }],
 			);
 		} finally {
 			setIsLoading(false);
