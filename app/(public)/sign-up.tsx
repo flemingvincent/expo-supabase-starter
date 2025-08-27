@@ -47,6 +47,7 @@ export default function Page() {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ padding: 16, gap: 8 }}
       >
+        <Text>Verification Code:</Text>
         <TextInput
           value={token}
           placeholder="Enter your verification code"
@@ -63,12 +64,14 @@ export default function Page() {
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ padding: 16, gap: 8 }}
     >
+      <Text>Email Address:</Text>
       <TextInput
         autoCapitalize="none"
         value={email}
         placeholder="Enter email"
         onChangeText={(email) => setEmail(email)}
       />
+      <Text>Password:</Text>
       <TextInput
         value={password}
         placeholder="Enter password"
