@@ -4,107 +4,160 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an Expo/React Native starter template with Supabase authentication, built using:
+Expo/React Native starter template with Supabase authentication and modern tooling:
 
-- **Expo Router** (v5) for file-based navigation with protected routes
-- **Supabase** for authentication and backend services
-- **NativeWind** for Tailwind CSS styling in React Native
-- **TypeScript** for type safety
-- **React Hook Form + Zod** for form handling and validation
+- **Expo SDK 53** + **Expo Router v5** for file-based navigation
+- **Supabase** authentication with AsyncStorage persistence
+- **NativeWind v4** (Tailwind CSS for React Native)
+- **React Hook Form** + **Zod** for form validation
+- **TypeScript** with strict mode enabled
+- **react-native-reusables** for shadcn/ui component patterns
 
-## Development Commands
+## Essential Commands
 
 ```bash
-# Start development server
-yarn start
-# or for clean start
+# Development
+yarn start                    # Start Expo dev server
+yarn ios                      # Run on iOS simulator
+yarn android                  # Run on Android emulator
+yarn web                      # Run in browser
+
+# Code Quality
+yarn lint                     # ESLint with auto-fix (required before commits)
+yarn generate-colors          # Generate colors from global.css
+
+# Clean Start (when encountering issues)
 npx expo start --clear --reset-cache
-
-# Platform-specific development
-yarn ios          # Run on iOS simulator
-yarn android      # Run on Android emulator  
-yarn web          # Run in web browser
-
-# Code quality
-yarn lint         # Run ESLint with auto-fix
-yarn generate-colors  # Generate colors and fix linting
 ```
 
-## Architecture Overview
+## Project Architecture
 
-### Authentication Flow
-- **AuthProvider** (`context/supabase-provider.tsx`) manages global auth state
-- **Protected routes** are implemented using Expo Router's Stack.Protected
-- Session persistence handled via AsyncStorage
-- Auth state automatically refreshes when app becomes active
-
-### Routing Structure
+### File-Based Routing Structure
 ```
 app/
-├── _layout.tsx              # Root layout with AuthProvider
-├── (protected)/             # Routes requiring authentication
-│   ├── _layout.tsx          # Protected routes layout (tabs)
+├── _layout.tsx                 # Root with AuthProvider & protected route logic
+├── (protected)/                # Authenticated routes (guard: !!session)
+│   ├── _layout.tsx            # Tab navigation setup
 │   ├── (tabs)/
-│   │   ├── index.tsx        # Main dashboard
-│   │   └── settings.tsx     # Settings screen
-│   └── modal.tsx            # Modal screens
-└── (public)/                # Public routes (no auth required)
-    ├── welcome.tsx          # Landing page
-    ├── sign-in.tsx          # Login form
-    └── sign-up.tsx          # Registration form
+│   │   ├── index.tsx          # Home tab
+│   │   └── settings.tsx       # Settings tab
+│   └── modal.tsx              # Modal screens
+└── (public)/                   # Unauthenticated routes (guard: !session)
+    ├── _layout.tsx            # Stack navigation
+    ├── welcome.tsx            # Landing screen
+    ├── sign-in.tsx            # Login form
+    └── sign-up.tsx            # Registration form
 ```
 
-### Component Architecture
-- **UI components** (`components/ui/`) follow shadcn/ui patterns using react-native-reusables
-- **Reusable components** (`components/`) for app-specific functionality
-- **Form components** use React Hook Form with Zod validation schemas
-- **Styling** uses NativeWind (Tailwind CSS for React Native)
+### Core Systems
 
-### Configuration
-- **Supabase config** (`config/supabase.ts`) with AsyncStorage persistence
-- **Environment variables** required: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-- **Metro config** for NativeWind CSS processing
-- **ESLint** configured with Expo and Prettier rules
+**Authentication (`context/supabase-provider.tsx`)**
+- Global auth state via Context API
+- Methods: `signUp()`, `signIn()`, `signOut()`
+- Auto-refresh on app foreground via `AppState` listener
+- Session persistence with AsyncStorage
 
-## Key Patterns
+**Supabase Client (`config/supabase.ts`)**
+- Configured with AsyncStorage for session persistence
+- Auto-refresh token management
+- Environment variables: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 
-### Authentication Guard
-Routes are protected using Expo Router's Stack.Protected with session-based guards:
+**Form Validation Pattern**
+```typescript
+// Standard pattern used across all forms
+const formSchema = z.object({
+  email: z.string().email("Please enter a valid email address."),
+  password: z.string().min(8).max(64)
+});
+
+const form = useForm<z.infer<typeof formSchema>>({
+  resolver: zodResolver(formSchema),
+  defaultValues: { email: "", password: "" }
+});
+```
+
+**Component Library (`components/ui/`)**
+- Based on react-native-reusables (shadcn/ui for React Native)
+- Core components: Button, Form, Input, Label, Text, Typography
+- All components use NativeWind classes
+- Utility: `cn()` function in `lib/utils.ts` for class merging
+
+### Styling System
+
+**NativeWind Configuration**
+- Tailwind config at `tailwind.config.js`
+- Global styles in `global.css` with CSS variables
+- Auto-generated TypeScript colors via `yarn generate-colors`
+- Color scheme support with `useColorScheme()` hook
+- Metro configured for CSS processing
+
+**CSS Variables Structure**
+- Light theme: `:root { --primary: h s% l%; }`
+- Dark theme: `.dark:root { --primary: h s% l%; }`
+- Generated to `constants/colors.ts` for runtime access
+
+### Configuration Files
+
+**TypeScript (`tsconfig.json`)**
+- Strict mode enabled
+- Path alias: `@/*` maps to project root
+- Includes all `.ts`, `.tsx` files
+
+**ESLint (`eslint.config.js`)**
+- Extends `eslint-config-expo` with Prettier
+- Auto-fix on `yarn lint`
+- Ignores `dist/` directory
+
+**Metro (`metro.config.js`)**
+- NativeWind CSS processing configured
+- Supabase compatibility resolver settings
+
+## Key Implementation Patterns
+
+### Protected Routes
+Uses Expo Router's `Stack.Protected` with session-based guards:
 ```typescript
 <Stack.Protected guard={!!session}>
   <Stack.Screen name="(protected)" />
 </Stack.Protected>
 ```
 
-### Form Handling
-All forms use React Hook Form + Zod pattern:
-```typescript
-const form = useForm<z.infer<typeof formSchema>>({
-  resolver: zodResolver(formSchema),
-  defaultValues: { ... }
-});
+### Error Handling in Auth Methods
+Auth methods in `AuthProvider` log errors but don't throw:
+- Errors logged to console
+- UI components handle loading states via `form.formState.isSubmitting`
+
+### Platform-Specific Styling
+Use NativeWind modifiers: `ios:`, `android:`, `web:`
+```tsx
+<View className="p-4 web:m-4" />
 ```
 
-### Styling Convention
-- Use NativeWind classes for styling
-- Follow shadcn/ui component patterns
-- Maintain consistent spacing and color schemes via `constants/colors.ts`
+## Development Workflow
 
-### State Management
-- **Global auth state**: Context API via AuthProvider
-- **Form state**: React Hook Form
-- **Local state**: React useState/useEffect
+1. **Environment Setup**
+   - Copy `.env.example` to `.env`
+   - Add Supabase URL and anon key
+   - Run `yarn install`
 
-## Development Notes
+2. **Adding New Screens**
+   - Place in appropriate directory (`(protected)/` or `(public)/`)
+   - File name becomes route path
+   - Export default React component
 
-- The app uses file-based routing - create new screens by adding files to the `app/` directory
-- Protected routes automatically redirect to sign-in when session expires
-- All UI components are designed to work across iOS, Android, and web platforms
-- Color scheme generation is automated via `scripts/generate-colors.js`
+3. **Creating Forms**
+   - Define Zod schema for validation
+   - Use `useForm` with `zodResolver`
+   - Implement with `FormField` and `FormInput` components
 
-## Testing Supabase Integration
+4. **Before Committing**
+   - Run `yarn lint` to fix formatting
+   - Ensure no TypeScript errors
+   - Test on target platforms
 
-Ensure you have:
-1. Created a Supabase project
-2. Added your URL and anon key to `.env` file
-3. Configured auth settings (email verification can be disabled for development)
+## Testing Notes
+
+No test framework is currently configured. The project structure suggests potential for:
+- Component testing with React Native Testing Library
+- E2E testing with Detox or Maestro
+- No existing test files or test scripts in package.json
