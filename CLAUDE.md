@@ -4,13 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Expo/React Native starter template with Supabase authentication and modern tooling:
+Educational mobile app with multiple authentication methods and AI chat features:
 
 - **Expo SDK 53** + **Expo Router v5** for file-based navigation
-- **Supabase** authentication with AsyncStorage persistence
+- **Dual Authentication**: Supabase + Custom Backend (Alibaba Cloud SMS for China)
 - **NativeWind v4** (Tailwind CSS for React Native)
 - **React Hook Form** + **Zod** for form validation
 - **TypeScript** with strict mode enabled
+- **Coze API** for AI chat functionality
 - **react-native-reusables** for shadcn/ui component patterns
 
 ## Essential Commands
@@ -28,6 +29,10 @@ yarn generate-colors          # Generate colors from global.css
 
 # Clean Start (when encountering issues)
 npx expo start --clear --reset-cache
+
+# Backend Server (for custom auth)
+cd backend && npm install     # Install backend dependencies
+cd backend && PORT=3001 npm start  # Start backend on port 3001
 ```
 
 ## Project Architecture
@@ -53,9 +58,25 @@ app/
 
 **Authentication (`context/supabase-provider.tsx`)**
 - Global auth state via Context API
-- Methods: `signUp()`, `signIn()`, `signOut()`
+- Dual authentication system:
+  - **Supabase Native**: Email/password, social providers, magic links
+  - **Custom Backend**: Phone/SMS via Alibaba Cloud (for China market)
+- Methods: 
+  - `signUp()`, `signIn()` - Supabase email/password
+  - `signInWithAccount()` - Custom backend account login
+  - `signInWithPhone()`, `verifyOTP()` - Phone authentication
+  - `signOut()` - Universal sign out
 - Auto-refresh on app foreground via `AppState` listener
 - Session persistence with AsyncStorage
+
+**Available Authentication Methods**
+1. **Email/Password** (Supabase) - ✅ Active
+2. **Account/Password** (Custom Backend) - ✅ Active
+   - Test accounts available: test@example.com, student1, 13800138000
+3. **Phone/SMS** (Custom Backend with Alibaba Cloud) - ✅ Active
+4. **Phone/SMS** (Supabase with Twilio/MessageBird) - 🔧 Ready but requires setup
+5. **Social Providers** (Google, Apple, GitHub, etc.) - 🔧 Ready but requires OAuth setup
+6. **Magic Links** (Passwordless email) - 🔧 Ready to use
 
 **Supabase Client (`config/supabase.ts`)**
 - Configured with AsyncStorage for session persistence
@@ -137,7 +158,20 @@ Use NativeWind modifiers: `ios:`, `android:`, `web:`
 
 1. **Environment Setup**
    - Copy `.env.example` to `.env`
-   - Add Supabase URL and anon key
+   - Add required environment variables:
+     ```bash
+     # Supabase (Required)
+     EXPO_PUBLIC_SUPABASE_URL=your-supabase-url
+     EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+     
+     # Backend API (Required for custom auth)
+     EXPO_PUBLIC_API_URL=http://localhost:3001
+     
+     # Coze API (Required for AI chat)
+     EXPO_PUBLIC_COZE_API_KEY=your-coze-api-key
+     EXPO_PUBLIC_COZE_BOT_ID=your-bot-id
+     ```
+   - For backend: Copy `backend/.env.example` to `backend/.env` and add Alibaba Cloud credentials
    - Run `yarn install`
 
 2. **Adding New Screens**
