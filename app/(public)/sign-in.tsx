@@ -1,4 +1,4 @@
-import React from "react";
+import { useState } from "react";
 import { Text, TextInput, Button, View, ScrollView } from "react-native";
 
 import { router } from "expo-router";
@@ -8,8 +8,8 @@ import { useSignIn } from "@/hooks/useSignIn";
 export default function Page() {
   const { signInWithPassword, isLoaded } = useSignIn();
 
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const onSignInPress = async () => {
     if (!isLoaded) return;

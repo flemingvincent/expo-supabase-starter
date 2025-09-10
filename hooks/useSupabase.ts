@@ -14,7 +14,7 @@ interface UseSupabaseProps {
 export const useSupabase = (): UseSupabaseProps => {
   const supabase = useContext(SupabaseContext);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
     if (!supabase) return;

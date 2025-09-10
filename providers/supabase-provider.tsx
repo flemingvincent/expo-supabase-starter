@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { ReactNode, useMemo } from "react";
 import { AppState, Platform } from "react-native";
 
 import { createClient, processLock } from "@supabase/supabase-js";
@@ -7,7 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SupabaseContext } from "@/context/supabase-context";
 
 interface SupabaseProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {

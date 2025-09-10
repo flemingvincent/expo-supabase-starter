@@ -1,7 +1,17 @@
+import { useEffect } from "react";
+
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 
 import { useSupabase } from "@/hooks/useSupabase";
 import { SupabaseProvider } from "@/providers/supabase-provider";
+
+SplashScreen.setOptions({
+  duration: 500,
+  fade: true,
+});
+
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   return (
@@ -14,12 +24,21 @@ export default function RootLayout() {
 function RootNavigator() {
   const { isLoaded, session } = useSupabase();
 
-  if (!isLoaded) {
-    return null;
-  }
+  useEffect(() => {
+    if (isLoaded) {
+      SplashScreen.hide();
+    }
+  }, [isLoaded]);
 
   return (
-    <Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        gestureEnabled: false,
+        animation: "none",
+        animationDuration: 0,
+      }}
+    >
       <Stack.Protected guard={!!session}>
         <Stack.Screen name="(protected)" />
       </Stack.Protected>

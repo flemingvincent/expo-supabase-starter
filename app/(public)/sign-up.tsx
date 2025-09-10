@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useState } from "react";
 import { Text, TextInput, Button, View, ScrollView } from "react-native";
 
 import { router } from "expo-router";
@@ -8,10 +8,10 @@ import { useSignUp } from "@/hooks/useSignUp";
 export default function Page() {
   const { isLoaded, signUp, verifyOtp } = useSignUp();
 
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [pendingVerification, setPendingVerification] = React.useState(false);
-  const [token, setToken] = React.useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [token, setToken] = useState("");
 
   const onSignUpPress = async () => {
     if (!isLoaded) return;

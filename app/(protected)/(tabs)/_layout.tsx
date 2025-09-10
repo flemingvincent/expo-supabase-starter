@@ -1,4 +1,4 @@
-import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
+import { NativeTabs, Icon, Label } from "expo-router/unstable-native-tabs";
 
 export default function TabsLayout() {
   return (
