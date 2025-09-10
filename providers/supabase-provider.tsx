@@ -1,5 +1,5 @@
-import { ReactNode, useMemo } from "react";
-import { AppState, Platform } from "react-native";
+import { ReactNode, useMemo, useEffect } from "react";
+import { AppState } from "react-native";
 
 import { createClient, processLock } from "@supabase/supabase-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -28,15 +28,18 @@ export const SupabaseProvider = ({ children }: SupabaseProviderProps) => {
     [supabaseUrl, supabaseKey],
   );
 
-  if (Platform.OS !== "web") {
-    AppState.addEventListener("change", (state) => {
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
       if (state === "active") {
         supabase.auth.startAutoRefresh();
       } else {
         supabase.auth.stopAutoRefresh();
       }
     });
-  }
+    return () => {
+      subscription?.remove();
+    };
+  }, [supabase]);
 
   return (
     <SupabaseContext.Provider value={supabase}>
