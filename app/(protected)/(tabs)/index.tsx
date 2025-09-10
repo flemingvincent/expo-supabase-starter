@@ -1,26 +1,32 @@
-import { router } from "expo-router";
-import { View } from "react-native";
+import { Button, View } from "react-native";
 
-import { Button } from "@/components/ui/button";
-import { Text } from "@/components/ui/text";
-import { H1, Muted } from "@/components/ui/typography";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function Home() {
-	return (
-		<View className="flex-1 items-center justify-center bg-background p-4 gap-y-4">
-			<H1 className="text-center">Home</H1>
-			<Muted className="text-center">
-				You are now authenticated and this session will persist even after
-				closing the app.
-			</Muted>
-			<Button
-				className="w-full"
-				variant="default"
-				size="default"
-				onPress={() => router.push("/(protected)/modal")}
-			>
-				<Text>Open Modal</Text>
-			</Button>
-		</View>
-	);
+import { useSupabase } from "@/hooks/useSupabase";
+
+export default function Page() {
+  const { signOut } = useSupabase();
+  const insets = useSafeAreaInsets();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (err) {
+      console.error(JSON.stringify(err, null, 2));
+    }
+  };
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+      }}
+    >
+      <Button title="Sign Out" onPress={handleSignOut} />
+    </View>
+  );
 }

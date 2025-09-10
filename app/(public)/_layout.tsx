@@ -1,52 +1,33 @@
 import { Stack } from "expo-router";
 
-import { useColorScheme } from "@/lib/useColorScheme";
-import { colors } from "@/constants/colors";
-
 export default function PublicLayout() {
-	const { colorScheme } = useColorScheme();
-
-	return (
-		<Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
-			<Stack.Screen name="welcome" />
-			<Stack.Screen
-				name="sign-up"
-				options={{
-					presentation: "modal",
-					headerShown: true,
-					headerTitle: "Sign Up",
-					headerStyle: {
-						backgroundColor:
-							colorScheme === "dark"
-								? colors.dark.background
-								: colors.light.background,
-					},
-					headerTintColor:
-						colorScheme === "dark"
-							? colors.dark.foreground
-							: colors.light.foreground,
-					gestureEnabled: true,
-				}}
-			/>
-			<Stack.Screen
-				name="sign-in"
-				options={{
-					presentation: "modal",
-					headerShown: true,
-					headerTitle: "Sign In",
-					headerStyle: {
-						backgroundColor:
-							colorScheme === "dark"
-								? colors.dark.background
-								: colors.light.background,
-					},
-					headerTintColor:
-						colorScheme === "dark"
-							? colors.dark.foreground
-							: colors.light.foreground,
-					gestureEnabled: true,
-				}}
-			/>
-		</Stack>
-	);
+  return (
+    <Stack initialRouteName="welcome">
+      <Stack.Screen
+        name="welcome"
+        options={{
+          title: "Welcome",
+          headerTransparent: true,
+        }}
+      />
+      <Stack.Screen
+        name="sign-up"
+        options={{
+          title: "Sign Up",
+          headerTransparent: true,
+          headerLargeTitle: true,
+          headerBackButtonDisplayMode: "minimal",
+        }}
+      />
+      <Stack.Screen
+        name="sign-in"
+        options={{
+          title: "Sign In",
+          headerTransparent: true,
+          headerLargeTitle: true,
+          headerBackButtonDisplayMode: "minimal",
+        }}
+      />
+    </Stack>
+  );
 }

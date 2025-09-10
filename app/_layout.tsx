@@ -1,42 +1,51 @@
-import "../global.css";
+import { useEffect } from "react";
 
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 
-import { AuthProvider, useAuth } from "@/context/supabase-provider";
+import { useSupabase } from "@/hooks/useSupabase";
+import { SupabaseProvider } from "@/providers/supabase-provider";
+
+SplashScreen.setOptions({
+  duration: 500,
+  fade: true,
+});
 
 SplashScreen.preventAutoHideAsync();
 
-SplashScreen.setOptions({
-	duration: 400,
-	fade: true,
-});
-
 export default function RootLayout() {
-	return (
-		<AuthProvider>
-			<RootNavigator />
-		</AuthProvider>
-	);
+  return (
+    <SupabaseProvider>
+      <RootNavigator />
+    </SupabaseProvider>
+  );
 }
 
 function RootNavigator() {
-	const { initialized, session } = useAuth();
+  const { isLoaded, session } = useSupabase();
 
-	if (!initialized) return;
-	else {
-		SplashScreen.hideAsync();
-	}
+  useEffect(() => {
+    if (isLoaded) {
+      SplashScreen.hide();
+    }
+  }, [isLoaded]);
 
-	return (
-		<Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
-			<Stack.Protected guard={!!session}>
-				<Stack.Screen name="(protected)" />
-			</Stack.Protected>
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        gestureEnabled: false,
+        animation: "none",
+        animationDuration: 0,
+      }}
+    >
+      <Stack.Protected guard={!!session}>
+        <Stack.Screen name="(protected)" />
+      </Stack.Protected>
 
-			<Stack.Protected guard={!session}>
-				<Stack.Screen name="(public)" />
-			</Stack.Protected>
-		</Stack>
-	);
+      <Stack.Protected guard={!session}>
+        <Stack.Screen name="(public)" />
+      </Stack.Protected>
+    </Stack>
+  );
 }

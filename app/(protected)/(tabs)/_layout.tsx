@@ -1,31 +1,12 @@
-import React from "react";
-import { Tabs } from "expo-router";
-
-import { useColorScheme } from "@/lib/useColorScheme";
-import { colors } from "@/constants/colors";
+import { NativeTabs, Icon, Label } from "expo-router/unstable-native-tabs";
 
 export default function TabsLayout() {
-	const { colorScheme } = useColorScheme();
-
-	return (
-		<Tabs
-			screenOptions={{
-				headerShown: false,
-				tabBarStyle: {
-					backgroundColor:
-						colorScheme === "dark"
-							? colors.dark.background
-							: colors.light.background,
-				},
-				tabBarActiveTintColor:
-					colorScheme === "dark"
-						? colors.dark.foreground
-						: colors.light.foreground,
-				tabBarShowLabel: false,
-			}}
-		>
-			<Tabs.Screen name="index" options={{ title: "Home" }} />
-			<Tabs.Screen name="settings" options={{ title: "Settings" }} />
-		</Tabs>
-	);
+  return (
+    <NativeTabs>
+      <NativeTabs.Trigger name="index">
+        <Label>Home</Label>
+        <Icon sf="house.fill" drawable="custom_android_drawable" />
+      </NativeTabs.Trigger>
+    </NativeTabs>
+  );
 }
